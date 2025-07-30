@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('subcategory',['a1', 'a2', 'b', 'c1', 'c2', 'c3', 'single_dice', 'double_dice'])->nullable();
             $table->enum('coin_toss', ['heads', 'tails'])->nullable();
             $table->string('number_result')->nullable();
+           
             $table->integer('dice_result')->nullable();
             $table->integer('odds')->nullable();
             $table->string('spin_wheel_result')->nullable();
@@ -27,7 +28,7 @@ return new class extends Migration
             $table->integer('stake');
             $table->enum("winning_box", ['box1', 'box2', 'box3'])->nullable();
             $table->enum("spin_bottle", ['up', 'down'])->nullable();
-            $table->enum('ball_direction', ['right', 'left', 'middle'])->nullable();
+            $table->enum('ball_direction', ['right', 'left', 'center'])->nullable();
            
             $table->timestamps();
         });
