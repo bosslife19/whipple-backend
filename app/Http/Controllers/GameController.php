@@ -142,7 +142,7 @@ public function playLosersGame(Request $request){
      $game = Game::find($request->gameId);
 
      if($game->losers_game_won){
-        return response()->json(['error'=>"This game has already been won"], 200);
+        return response()->json(['error'=>"This game has already been won", 'status'=>false], 200);
      }
    $userLost =  $game->losers()->where('user_id', $request->user()->id)->exists();
 
@@ -152,7 +152,7 @@ public function playLosersGame(Request $request){
      return response()->json(['status'=>true], 200);
 
    }else{
-    return response()->json(['error'=>'You can not play this game'], 200);
+    return response()->json(['error'=>'You can not play this game', 'status'=>false], 200);
    }
 
 }

@@ -13,7 +13,7 @@ return new class extends Migration
     {
 Schema::table('game_user', function (Blueprint $table) {
     $table->boolean('is_loser')->default(false);
-     $table->boolean('is_winner')->default(false)
+     $table->boolean('is_winner')->default(false);
 
 });
     }

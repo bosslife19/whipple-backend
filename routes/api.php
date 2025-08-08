@@ -22,4 +22,5 @@ Route::middleware('auth:sanctum')->group(function(){
    Route::post('/play-losers-game', [GameController::class, 'playLosersGame']);
    Route::get('/get-losers-game', [GameController::class, 'getLosersGame']);
    Route::post('/win-losers-game', [GameController::class, "winLosersGame"]);
+   Route::post('/losers-vote', [VoteController::class, 'losersVote']);
 });
