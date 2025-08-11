@@ -22,7 +22,8 @@ class AuthController extends Controller
                     'name' => $data['name'],
                     'email' => $data['email'],
                     'phone'=>$data['phoneNumber'],
-
+                    'referral_code'=>uniqid(),
+                    'referred_by' => User::where('referral_code', $request->referred_by)->first()->id ?? null,
                     'password' => bcrypt($data['password']),
                     
                 ]);
