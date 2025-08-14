@@ -19,7 +19,9 @@ return new class extends Migration
             $table->decimal('balance_before', 15, 2)->nullable();
             $table->decimal('balance_after', 15, 2)->nullable();
             $table->enum('status', ['pending', 'completed', 'failed', 'cancelled'])->default('pending');
-            $table->string('reference')->unique();
+            $table->string('ref')->unique();
+            $table->string('gateway')->nullable();
+            $table->string('reference')->nullable();
             $table->string('description')->nullable();
             $table->json('meta')->nullable();
             $table->timestamps();

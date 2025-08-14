@@ -1,81 +1,33 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Services;
 
-use App\Models\User;
 use App\Models\Transaction;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Services\TransactionService;
 
-class TransactionController extends Controller
+class TransactionService
 {
-    public function depositInitialize(Request $request)
-    {
-        if (!$request->amount || !is_numeric($request->amount) || $request->amount < 1) {
-            return $this->errRes(null, 'Invalid amount');
-        }
-        $data = (new TransactionService())->deposit($request->amount, $request->reference, $request->gateway, $request->meta);
-        return $this->sucRes($data, 'Deposit initialized successfully');
-    }
-
-    public function depositVerified(Request $request)
+    public function transactionVerify($reference)
     {
 
-        $data = (new TransactionService())->depositVerified($request->ref, $request->reference, $request->meta);
-        if (!$data) {
-            return $this->errRes(null, 'Deposit verification failed');
-        }
-        return $this->sucRes($data, 'Deposit initialized successfully');
-    }
-
-    public function transactionPin(Request $request)
-    {
         $user = User::find(Auth::user()->id);
-        if (!$user) {
-            return $this->errRes(null, 'User not found');
-        }
+        $tran = Transaction::where('reference',)->first();
 
-        $pin = $request->pin;
-        if (!$pin || strlen($pin) < 4) {
-            return $this->errRes(null, 'Invalid transaction pin');
-        }
-
-        $user->pin = encrypt($pin);
-        $user->save();
-
-        return $this->sucRes(null, 'Transaction pin set successfully');
-    }
-
-    /**
-     * Deposit money
-     */
-    public function deposit(Request $request)
-    {
-        $request->validate([
-            'amount' => 'required|numeric|min:1'
-        ]);
-
-        $user = $request->user();
-
-        DB::transaction(function () use ($user, $request) {
-            $before = $user->balance;
-            $after = $before + $request->amount;
+        DB::transaction(function () use ($user, $tran) {
+            $before = $user->wallet_balance;
+            $after = $before + $tran->amount;
 
             // Create transaction
-            Transaction::create([
-                'user_id' => $user->id,
-                'type' => 'deposit',
-                'amount' => $request->amount,
+            $tran->update([
                 'balance_before' => $before,
                 'balance_after' => $after,
-                'status' => 'completed',
-                'description' => 'Deposit to wallet',
             ]);
 
             // Update balance
-            $user->update(['balance' => $after]);
+            $user->update(['wallet_balance' => $after]);
         });
 
         return response()->json([
@@ -83,6 +35,54 @@ class TransactionController extends Controller
             'balance' => $user->fresh()->balance
         ], 201);
     }
+
+    /**
+     * Deposit money
+     */
+    public function deposit($amount, $reference = null, $gateway = null, $meta = null)
+    {
+
+        return DB::transaction(function () use ($amount, $reference, $gateway, $meta) {
+
+            // Create transaction
+            return Transaction::create([
+                'user_id' => Auth::user()->id,
+                'type' => 'deposit',
+                'amount' => $amount,
+                'status' => 'pending',
+                'ref' => uniqid(),
+                'gateway' => $gateway,
+                'reference' => $reference,
+                'description' => 'Deposit to wallet',
+                'meta' => $meta ? json_encode($meta) : null,
+            ]);
+        });
+    }
+
+    public function depositVerified($ref, $reference = null,  $meta = null)
+    {
+        $user = User::find(Auth::user()->id);
+        return DB::transaction(function () use ($user, $ref, $reference, $meta) {
+            $tran = Transaction::where('ref', $ref)->where('user_id', $user->id)->first();
+            if (!$tran) {
+                return false;
+            }
+            $before = $user->wallet_balance;
+            $after = $before + $tran->amount;
+            // Update transaction
+            $tran->update([
+                'status' => 'completed',
+                'reference' => $reference,
+                'meta' => $meta ? json_encode($meta) : null,
+                'balance_before' => $before,
+                'balance_after' => $after,
+            ]);
+            // Update user balance
+            $user->update(['wallet_balance' => $after]);
+            return $user->fresh()->wallet_balance;
+        });
+    }
+
 
     /**
      * Withdraw money

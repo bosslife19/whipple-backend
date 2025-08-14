@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('user', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
+            $table->text("pin")->nullable();
             $table->string("referral_code")->nullable();
             $table->integer("referred_by")->nullable();
             $table->double("wallet_balance")->default(0);
@@ -24,7 +25,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('user', function (Blueprint $table) {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn("pin");
             $table->dropColumn("referral_code");
             $table->dropColumn("referred_by");
             $table->dropColumn("wallet_balance");

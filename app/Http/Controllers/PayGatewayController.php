@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
+use App\Http\Services\TransactionService;
 
 class PayGatewayController extends Controller
 {
@@ -14,18 +15,18 @@ class PayGatewayController extends Controller
     public function paystackInitialize(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
             'amount' => 'required|numeric|min:1'
         ]);
 
-        $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))
-            ->post(env('PAYSTACK_PAYMENT_URL') . '/transaction/initialize', [
-                'email' => $request->email,
+        $response = Http::withToken(config('services.paystack.secret_key'))
+            ->post(config('services.paystack.payment_url') . '/transaction/initialize', [
+                'email' => $request->user()->email,
                 'amount' => $request->amount * 100, // amount in kobo
                 'callback_url' => route('paystack.callback'),
-            ]);
+            ])->json();
+        $resolver = (new TransactionService())->deposit($request->amount, $response['data']['reference'], 'paystack', $response['data']);
 
-        return response()->json($response->json());
+        return response()->json($response, 200);
     }
 
     /**
@@ -35,13 +36,15 @@ class PayGatewayController extends Controller
     {
         $reference = $request->query('reference');
 
-        $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))
-            ->get(env('PAYSTACK_PAYMENT_URL') . "/transaction/verify/{$reference}");
+        $response = Http::withToken(config('services.paystack.secret_key'))
+            ->get(config('services.paystack.payment_url') . "/transaction/verify/{$reference}");
 
         $data = $response->json();
 
         if ($data['status'] && $data['data']['status'] === 'success') {
-            // TODO: Update user payment record in DB
+
+            $resolver = (new TransactionService())->transactionVerify($reference);
+
             return response()->json([
                 'message' => 'Payment verified successfully',
                 'data' => $data['data']
