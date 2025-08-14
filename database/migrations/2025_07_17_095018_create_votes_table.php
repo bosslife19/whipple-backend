@@ -16,6 +16,7 @@ return new class extends Migration
              $table->foreignId('player_id')->constrained('users')->onDelete('cascade');
              $table->foreignId('game_id')->constrained('games')->onDelete('cascade');
              $table->string('vote');
+             $table->boolean("is_loser")->default(false);
             $table->timestamps();
         });
     }

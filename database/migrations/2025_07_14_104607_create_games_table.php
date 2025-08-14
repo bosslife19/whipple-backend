@@ -24,6 +24,8 @@ return new class extends Migration
             $table->integer('odds')->nullable();
             $table->string('spin_wheel_result')->nullable();
             $table->integer('number_wheel_result')->nullable();
+            $table->boolean('losers_game_won')->default(false);
+            $table->boolean('game_won')->default(false);
             $table->string('number_wheel_results')->nullable();
             $table->integer('stake');
             $table->enum("winning_box", ['box1', 'box2', 'box3'])->nullable();

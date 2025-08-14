@@ -130,6 +130,32 @@ class GameController extends Controller
         return response()->json(['status'=>true, 'game'=>$game], 200);
     }
 
+public function winLosersGame(Request $request){
+     $game = Game::find($request->gameId);
+
+     $game->losers_game_won = true;
+     $game->save();
+
+     return response()->json(['status'=>true], 200);
+}
+public function playLosersGame(Request $request){
+     $game = Game::find($request->gameId);
+
+     if($game->losers_game_won){
+        return response()->json(['error'=>"This game has already been won", 'status'=>false], 200);
+     }
+   $userLost =  $game->losers()->where('user_id', $request->user()->id)->exists();
+
+   if($userLost){
+     $game->losers()->detach($request->user()->id);
+
+     return response()->json(['status'=>true], 200);
+
+   }else{
+    return response()->json(['error'=>'You can not play this game', 'status'=>false], 200);
+   }
+
+}
     public function playGame(Request $request){
         $request->validate(['gameId'=>'required']);
 
@@ -143,8 +169,10 @@ return response()->json(['error'=>'You have already played this game']);
 
     if( $game->name == 'Lucky Number'){
     if($game->number_result == $request->choiceNumber){
+        $game->winners()->attach($request->user()->id);
         return response()->json(['status'=>true, 'success'=>true]);
     }else{
+               $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
         return response()->json(['status'=>true, 'success'=>false]);
     }
     }
@@ -152,24 +180,30 @@ return response()->json(['error'=>'You have already played this game']);
     if($game->name == "Flip The Coin"){
         
         if($game->coin_toss == $request->choice){
+            $game->winners()->attach($request->user()->id);
             return response()->json(['status'=>true, 'success'=>true]);
         }else{
+                    $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
     if($game->name =="Goal Challenge"){
        
           if($game->ball_direction == $request->direction){
+            $game->winners()->attach($request->user()->id);
             return response()->json(['status'=>true, 'success'=>true]);
         }else{
+                      $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
     if($game->name =="Dice Roll"){
        
           if($game->dice_result == $request->numberRolled){
+            $game->winners()->attach($request->user()->id);
             return response()->json(['status'=>true, 'success'=>true]);
         }else{
+                      $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
@@ -177,8 +211,10 @@ return response()->json(['error'=>'You have already played this game']);
      if($game->name =="One Number Spin"){
        
           if($game->number_wheel_result == $request->numberWheeled){
+            $game->winners()->attach($request->user()->id);
             return response()->json(['status'=>true, 'success'=>true]);
         }else{
+                       $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
@@ -186,31 +222,40 @@ return response()->json(['error'=>'You have already played this game']);
     if($game->name =="Mystery Box Game"){
        
           if($game->winning_box == $request->boxSelected){
+            $game->winners()->attach($request->user()->id);
             return response()->json(['status'=>true, 'success'=>true]);
         }else{
+                      $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
     if($game->name =="Color Roulette2"){
                   if($game->spin_wheel_result == $request->colorSpun){
+                    $game->winners()->attach($request->user()->id);
             return response()->json(['status'=>true, 'success'=>true]);
         }else{
+                      $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
 
     if($game->name =="Color Roulette"){
                   if($game->spin_wheel_result == $request->colorSpun){
+                    $game->winners()->attach($request->user()->id);
             return response()->json(['status'=>true, 'success'=>true]);
         }else{
+           $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
 
     if($game->name =="Spin The Bottle"){
                   if($game->spin_bottle == $request->direction){
+                    $game->winners()->attach($request->user()->id);
             return response()->json(['status'=>true, 'success'=>true]);
         }else{
+           $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
@@ -218,5 +263,17 @@ return response()->json(['error'=>'You have already played this game']);
 
 
 
+    }
+
+    public function getLosersGame(Request $request){
+        $userId = $request->user()->id;
+        $gamesUserLost = Game::whereHas('losers', function ($query) use ($userId) {
+    $query->where('user_id', $userId);
+})->get();
+
+\Log::info($gamesUserLost);
+
+
+return response()->json(['games'=>$gamesUserLost], 200);
     }
 }
