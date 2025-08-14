@@ -8,40 +8,42 @@ use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
- public function signUp(Request $request)
+    public function signUp(Request $request)
     {
         try {
             //code...
 
 
-            $data = $request->validate(['email' => 'required', 'name' => 'required', 'password' => 'required','phoneNumber'=>'required']);
-           try {
-            //code...
-            
-             $user = User::create([
+            $data = $request->validate(['email' => 'required', 'name' => 'required', 'password' => 'required', 'phoneNumber' => 'required']);
+            try {
+                //code...
+                $referred_by = User::where('referral_code', $request->referred_by)
+                    ->whereNotNull('referral_code')
+                    ->first();
+                $user = User::create([
                     'name' => $data['name'],
                     'email' => $data['email'],
-                    'phone'=>$data['phoneNumber'],
-
+                    'phone' => $data['phoneNumber'],
+                    'referral_code' => uniqid(),
+                    'referred_by' => $referred_by ? $referred_by->id : null,
                     'password' => bcrypt($data['password']),
-                    
+
                 ]);
 
-            
 
-            $token =  $user->createToken('main')->plainTextToken;
 
-            return response()->json(['token' => $token, 'user' => $user, 'status'=>true], 200);
-           } catch (\Exception $th) {
-             return response()->json(['error'=>$th->getMessage()]);
-           }
-               
-        } catch (\Exception $e) {
-           
-            if($e->getCode()==23000){
-                return response()->json(['error'=>'User with this email already exists']);
+                $token =  $user->createToken('main')->plainTextToken;
+
+                return response()->json(['token' => $token, 'user' => $user, 'status' => true], 200);
+            } catch (\Exception $th) {
+                return response()->json(['error' => $th->getMessage()]);
             }
-            return response()->json(['error'=>$e->getMessage()]);
+        } catch (\Exception $e) {
+
+            if ($e->getCode() == 23000) {
+                return response()->json(['error' => 'User with this email already exists']);
+            }
+            return response()->json(['error' => $e->getMessage()]);
             // if ($e->getCode() === '23000') {
             //     return response()->json(['message' => 'Email already exists, please login instead.'], 422);
             // }
@@ -62,17 +64,19 @@ class AuthController extends Controller
             ]);
         }
 
-        $user = Auth::user();
-
-
+        $user = User::find(Auth::user()->id);
         $token = $user->createToken('main')->plainTextToken;
+        if ($user->referral_code == null) {
+            $user->referral_code = uniqid();
+            $user->save();
+        }
 
 
         return response(
             [
                 'status' => true,
                 'token' => $token,
-                'user' => $user,
+                'user' => $user->fresh(),
                 'isAdmin' => $user->isAdmin,
 
             ]

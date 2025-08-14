@@ -18,28 +18,28 @@ class User extends Authenticatable
      *
      * @var list<string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'phone',
-    ];
+    protected $guarded = [];
 
     public function createdGames()
-{
-    return $this->hasMany(Game::class, 'creator_id');
-}
+    {
+        return $this->hasMany(Game::class, 'creator_id');
+    }
 
-public function playedGames()
-{
-    return $this->belongsToMany(Game::class, 'game_user')
-                ->withTimestamps();
+    public function transaction()
+    {
+        return $this->hasMany(Transaction::class, 'user_id');
+    }
 
-}
+    public function playedGames()
+    {
+        return $this->belongsToMany(Game::class, 'game_user')
+            ->withTimestamps();
+    }
 
-public function vote(){
-return $this->hasOne(Vote::class, 'player_id');
-}
+    public function vote()
+    {
+        return $this->hasOne(Vote::class, 'player_id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.
