@@ -31,7 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/withdraw', [TransactionController::class, 'withdraw']);
     Route::post('/spend-game', [TransactionController::class, 'spendOnGame']);
 
+    Route::get('/transaction-list/{type?}', [TransactionController::class, 'transactionList']);
     Route::post('/transaction-pin', [TransactionController::class, 'transactionPin']);
-
     Route::get('/referral-list', [UserController::class, 'referralList']);
 });

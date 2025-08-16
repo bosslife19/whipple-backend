@@ -161,4 +161,17 @@ class TransactionController extends Controller
             'balance' => $user->fresh()->balance
         ], 201);
     }
+
+    public function transactionList($type = null)
+    {
+        $query = Transaction::where('user_id', Auth::user()->id);
+
+        if ($type) {
+            $query->where('type', $type);
+        }
+
+        $transactions = $query->orderBy('created_at', 'desc')->get();
+
+        return $this->sucRes($transactions, 'Transaction list retrieved successfully');
+    }
 }
