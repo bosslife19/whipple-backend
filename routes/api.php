@@ -29,13 +29,14 @@ Route::middleware('auth:sanctum')->group(function(){
    Route::post('/losers-vote', [VoteController::class, 'losersVote']);
    Route::post('/paystack/initialize', [PayGatewayController::class, 'paystackInitialize']);
     Route::get('/paystack/callback', [PayGatewayController::class, 'paystackCallback'])->name('paystack.callback');
-
+    Route::get("/get-my-games", [GameController::class, 'getMyGames']);
     Route::post('/deposit/initialize', [TransactionController::class, 'depositInitialize']);
     Route::post('/deposit/verified', [TransactionController::class, 'depositVerified']);
     Route::post('/withdraw', [TransactionController::class, 'withdraw']);
     Route::post('/spend-game', [TransactionController::class, 'spendOnGame']);
 
     Route::post('/transaction-pin', [TransactionController::class, 'transactionPin']);
+    Route::get('/get-my-played-games', [GameController::class, 'getMyPlayedGames']);
 
     Route::get('/referral-list', [UserController::class, 'referralList']);
 

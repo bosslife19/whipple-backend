@@ -119,8 +119,36 @@ class GameController extends Controller
         }
     }
 
+
+public function getMyPlayedGames(Request $request)
+{
+    $user = $request->user();
+
+    // Get all games user played
+    $games = $user->playedGames()->with(['winners', 'losers'])->get();
+
+    // Format the response
+    \Log::info($games);
+    $result = $games->map(function($game) use ($user) {
+        
+        return [
+            'id' => $game->id,
+            'name' => $game->name,
+            'status' => $game->status,
+            'odds'=>$game->odds,
+            'creator'=>$game->creator->name,
+            'stake'=>$game->stake,
+            'result' => $game->winners->contains($user->id) 
+                            ? 'won' 
+                            : ($game->losers->contains($user->id) ? 'lost' : 'won'),
+        ];
+    });
+
+    return response()->json($result);
+}
+
     public function getAllGames(Request $request){
-        $games = Game::latest()->with('creator')->get();
+        $games = Game::where('status', 'open')->where("creator_id", '!=', $request->user()->id)->latest()->get();
 
         return response()->json(['games'=>$games, 'status'=>true]);
     }
@@ -129,6 +157,11 @@ class GameController extends Controller
         $game = Game::with('creator')->find($id);
 
         return response()->json(['status'=>true, 'game'=>$game], 200);
+    }
+
+    public function getMyGames(Request $request){
+        $games = Game::where('creator_id', $request->user()->id)->get();
+        return response()->json(['status'=>true, 'games'=>$games]);
     }
 
 public function winLosersGame(Request $request){
@@ -166,6 +199,11 @@ $isAttached = $game->players()->where('user_id', $request->user()->id)->exists()
 if ($isAttached) {
 return response()->json(['error'=>'You have already played this game']);
 }
+if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
+    $game->losers()->where('user_id', $request->user()->id)->exists()) {
+    return response()->json(['error' => 'You have already played this game']);
+}
+
     $game->players()->attach($request->user()->id);
 
     if( $game->name == 'Lucky Number'){
