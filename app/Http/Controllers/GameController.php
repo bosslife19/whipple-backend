@@ -45,7 +45,8 @@ class GameController extends Controller
                     'name'=>$request->name,
                     'dice_result'=>$request->diceRolled,
                     'stake'=>$request->stake,
-                    'odds'=>$request->odds
+                    'odds'=>$request->odds,
+                    'dice_type'=>$request->diceType
                 ]);
                 return response()->json(['status'=>true]);
             }
@@ -168,10 +169,41 @@ return response()->json(['error'=>'You have already played this game']);
     $game->players()->attach($request->user()->id);
 
     if( $game->name == 'Lucky Number'){
-    if($game->number_result == $request->choiceNumber){
-        $game->winners()->attach($request->user()->id);
-        return response()->json(['status'=>true, 'success'=>true]);
-    }else{
+        if ($game->number_result == $request->choiceNumber) {
+            // Reload fresh count to avoid stale data
+            $winnersCount = $game->winners()->count();
+
+           
+            if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // Attach winner
+            $game->winners()->attach($request->user()->id);
+        
+            // Check count again in case two requests came in at the same time
+            $newCount = $game->winners()->count();
+        
+            if ($newCount > $game->number_of_winners) {
+                // Remove the extra winner (this user)
+                $game->winners()->detach($request->user()->id);
+        
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // If exactly $game->number_of_winners now → close the game
+            if ($newCount == $game->number_of_winners) {
+                $game->update(['status' => 'closed']);
+            }
+        
+            return response()->json(['status' => true, 'success' => true]);
+        }else{
                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
         return response()->json(['status'=>true, 'success'=>false]);
     }
@@ -180,8 +212,37 @@ return response()->json(['error'=>'You have already played this game']);
     if($game->name == "Flip The Coin"){
         
         if($game->coin_toss == $request->choice){
+            $winnersCount = $game->winners()->count();
+        
+             if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // Attach winner
             $game->winners()->attach($request->user()->id);
-            return response()->json(['status'=>true, 'success'=>true]);
+        
+            // Check count again in case two requests came in at the same time
+            $newCount = $game->winners()->count();
+        
+            if ($newCount > $game->number_of_winners) {
+                // Remove the extra winner (this user)
+                $game->winners()->detach($request->user()->id);
+        
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // If exactly $game->number_of_winners now → close the game
+            if ($newCount == $game->number_of_winners) {
+                $game->update(['status' => 'closed']);
+            }
+        
+            return response()->json(['status' => true, 'success' => true]);
         }else{
                     $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
@@ -190,8 +251,37 @@ return response()->json(['error'=>'You have already played this game']);
     if($game->name =="Goal Challenge"){
        
           if($game->ball_direction == $request->direction){
+            $winnersCount = $game->winners()->count();
+        
+             if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // Attach winner
             $game->winners()->attach($request->user()->id);
-            return response()->json(['status'=>true, 'success'=>true]);
+        
+            // Check count again in case two requests came in at the same time
+            $newCount = $game->winners()->count();
+        
+            if ($newCount > $game->number_of_winners) {
+                // Remove the extra winner (this user)
+                $game->winners()->detach($request->user()->id);
+        
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // If exactly $game->number_of_winners now → close the game
+            if ($newCount == $game->number_of_winners) {
+                $game->update(['status' => 'closed']);
+            }
+        
+            return response()->json(['status' => true, 'success' => true]);
         }else{
                       $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
@@ -200,8 +290,37 @@ return response()->json(['error'=>'You have already played this game']);
     if($game->name =="Dice Roll"){
        
           if($game->dice_result == $request->numberRolled){
+            $winnersCount = $game->winners()->count();
+        
+             if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // Attach winner
             $game->winners()->attach($request->user()->id);
-            return response()->json(['status'=>true, 'success'=>true]);
+        
+            // Check count again in case two requests came in at the same time
+            $newCount = $game->winners()->count();
+        
+            if ($newCount > $game->number_of_winners) {
+                // Remove the extra winner (this user)
+                $game->winners()->detach($request->user()->id);
+        
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // If exactly $game->number_of_winners now → close the game
+            if ($newCount == $game->number_of_winners) {
+                $game->update(['status' => 'closed']);
+            }
+        
+            return response()->json(['status' => true, 'success' => true]);
         }else{
                       $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
@@ -211,8 +330,37 @@ return response()->json(['error'=>'You have already played this game']);
      if($game->name =="One Number Spin"){
        
           if($game->number_wheel_result == $request->numberWheeled){
+            $winnersCount = $game->winners()->count();
+        
+             if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // Attach winner
             $game->winners()->attach($request->user()->id);
-            return response()->json(['status'=>true, 'success'=>true]);
+        
+            // Check count again in case two requests came in at the same time
+            $newCount = $game->winners()->count();
+        
+            if ($newCount > $game->number_of_winners) {
+                // Remove the extra winner (this user)
+                $game->winners()->detach($request->user()->id);
+        
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // If exactly $game->number_of_winners now → close the game
+            if ($newCount == $game->number_of_winners) {
+                $game->update(['status' => 'closed']);
+            }
+        
+            return response()->json(['status' => true, 'success' => true]);
         }else{
                        $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
@@ -222,8 +370,37 @@ return response()->json(['error'=>'You have already played this game']);
     if($game->name =="Mystery Box Game"){
        
           if($game->winning_box == $request->boxSelected){
+            $winnersCount = $game->winners()->count();
+        
+             if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // Attach winner
             $game->winners()->attach($request->user()->id);
-            return response()->json(['status'=>true, 'success'=>true]);
+        
+            // Check count again in case two requests came in at the same time
+            $newCount = $game->winners()->count();
+        
+            if ($newCount > $game->number_of_winners) {
+                // Remove the extra winner (this user)
+                $game->winners()->detach($request->user()->id);
+        
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // If exactly $game->number_of_winners now → close the game
+            if ($newCount == $game->number_of_winners) {
+                $game->update(['status' => 'closed']);
+            }
+        
+            return response()->json(['status' => true, 'success' => true]);
         }else{
                       $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
@@ -231,8 +408,37 @@ return response()->json(['error'=>'You have already played this game']);
     }
     if($game->name =="Color Roulette2"){
                   if($game->spin_wheel_result == $request->colorSpun){
+                    $winnersCount = $game->winners()->count();
+        
+                     if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                        return response()->json([
+                            'status' => false,
+                            'error' => 'Game is already closed.'
+                        ]);
+                    }
+                
+                    // Attach winner
                     $game->winners()->attach($request->user()->id);
-            return response()->json(['status'=>true, 'success'=>true]);
+                
+                    // Check count again in case two requests came in at the same time
+                    $newCount = $game->winners()->count();
+                
+                    if ($newCount > $game->number_of_winners) {
+                        // Remove the extra winner (this user)
+                        $game->winners()->detach($request->user()->id);
+                
+                        return response()->json([
+                            'status' => false,
+                            'error' => 'Game is already closed.'
+                        ]);
+                    }
+                
+                    // If exactly $game->number_of_winners now → close the game
+                    if ($newCount == $game->number_of_winners) {
+                        $game->update(['status' => 'closed']);
+                    }
+                
+                    return response()->json(['status' => true, 'success' => true]);
         }else{
                       $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
@@ -241,8 +447,37 @@ return response()->json(['error'=>'You have already played this game']);
 
     if($game->name =="Color Roulette"){
                   if($game->spin_wheel_result == $request->colorSpun){
+                    $winnersCount = $game->winners()->count();
+        
+                     if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                        return response()->json([
+                            'status' => false,
+                            'error' => 'Game is already closed.'
+                        ]);
+                    }
+                
+                    // Attach winner
                     $game->winners()->attach($request->user()->id);
-            return response()->json(['status'=>true, 'success'=>true]);
+                
+                    // Check count again in case two requests came in at the same time
+                    $newCount = $game->winners()->count();
+                
+                    if ($newCount > $game->number_of_winners) {
+                        // Remove the extra winner (this user)
+                        $game->winners()->detach($request->user()->id);
+                
+                        return response()->json([
+                            'status' => false,
+                            'error' => 'Game is already closed.'
+                        ]);
+                    }
+                
+                    // If exactly $game->number_of_winners now → close the game
+                    if ($newCount == $game->number_of_winners) {
+                        $game->update(['status' => 'closed']);
+                    }
+                
+                    return response()->json(['status' => true, 'success' => true]);
         }else{
            $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
             return response()->json(['status'=>true, 'success'=>false]);
@@ -251,8 +486,37 @@ return response()->json(['error'=>'You have already played this game']);
 
     if($game->name =="Spin The Bottle"){
                   if($game->spin_bottle == $request->direction){
+                    $winnersCount = $game->winners()->count();
+        
+                     if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                        return response()->json([
+                            'status' => false,
+                            'error' => 'Game is already closed.'
+                        ]);
+                    }
+                
+                    // Attach winner
                     $game->winners()->attach($request->user()->id);
-            return response()->json(['status'=>true, 'success'=>true]);
+                
+                    // Check count again in case two requests came in at the same time
+                    $newCount = $game->winners()->count();
+                
+                    if ($newCount > $game->number_of_winners) {
+                        // Remove the extra winner (this user)
+                        $game->winners()->detach($request->user()->id);
+                
+                        return response()->json([
+                            'status' => false,
+                            'error' => 'Game is already closed.'
+                        ]);
+                    }
+                
+                    // If exactly $game->number_of_winners now → close the game
+                    if ($newCount == $game->number_of_winners) {
+                        $game->update(['status' => 'closed']);
+                    }
+                
+                    return response()->json(['status' => true, 'success' => true]);
         }else{
            $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
 
@@ -271,7 +535,7 @@ return response()->json(['error'=>'You have already played this game']);
     $query->where('user_id', $userId);
 })->get();
 
-\Log::info($gamesUserLost);
+
 
 
 return response()->json(['games'=>$gamesUserLost], 200);
