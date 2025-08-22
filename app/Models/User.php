@@ -30,6 +30,11 @@ class User extends Authenticatable
         return $this->hasMany(Transaction::class, 'user_id');
     }
 
+    public function bank()
+    {
+        return $this->hasMany(UserBankDetails::class, 'user_id');
+    }
+
     public function playedGames()
     {
         return $this->belongsToMany(Game::class, 'game_user')

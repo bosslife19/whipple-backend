@@ -16,8 +16,13 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->enum('type', ['deposit', 'withdrawal', 'game']);
             $table->decimal('amount', 15, 2);
+            $table->decimal('fee', 15, 2)->nullable();
+            $table->decimal('point', 15, 2)->nullable();
             $table->decimal('balance_before', 15, 2)->nullable();
             $table->decimal('balance_after', 15, 2)->nullable();
+            $table->decimal('point_before', 15, 2)->nullable();
+            $table->decimal('point_after', 15, 2)->nullable();
+            $table->decimal('referral_bonus', 15, 2)->nullable();
             $table->enum('status', ['pending', 'completed', 'failed', 'cancelled'])->default('pending');
             $table->string('ref')->unique();
             $table->string('gateway')->nullable();

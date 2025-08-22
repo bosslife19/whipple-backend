@@ -3,12 +3,32 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
 use App\Http\Services\TransactionService;
 
 class PayGatewayController extends Controller
 {
+
+    public function getBanks()
+    {
+        $response = Http::withToken(config('services.paystack.secret_key'))
+            ->get(config('services.paystack.payment_url') . '/bank');
+
+        if ($response->failed()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unable to fetch banks from Paystack'
+            ], 500);
+        }
+
+        return response()->json([
+            'status' => true,
+            'banks' => $response->json()['data']
+        ]);
+    }
+
     /**
      * Initialize Payment
      */
@@ -55,5 +75,32 @@ class PayGatewayController extends Controller
             'message' => 'Payment verification failed',
             'data' => $data
         ], 400);
+    }
+
+
+    // ######################################################################################
+    /**
+     * Step 1: Withdrawal Account Resolution
+     */
+
+    /**
+     * Step 3: Initiate Transfer
+     */
+    public function initiateTransfer(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:100', // amount in Naira
+            'recipient' => 'required|string', // recipient_code from createRecipient
+        ]);
+
+        $response = Http::withToken(config('services.paystack.secret_key'))
+            ->post(config('services.paystack.payment_url') . "/transfer", [
+                "source" => "balance",
+                "amount" => $request->amount * 100, // Paystack expects kobo
+                "recipient" => $request->recipient,
+                "reason" => $request->reason ?? "User Withdrawal"
+            ]);
+
+        return $response->json();
     }
 }

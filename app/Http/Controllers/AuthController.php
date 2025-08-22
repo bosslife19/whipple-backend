@@ -18,15 +18,17 @@ class AuthController extends Controller
             $data = $request->validate(['email' => 'required', 'name' => 'required', 'password' => 'required', 'phoneNumber' => 'required']);
             try {
                 //code...
-                $referred_by = User::where('referral_code', $request->referred_by)
-                    ->whereNotNull('referral_code')
-                    ->first();
+                $referred_by = null;
+                if (isset($request->referrals) || $request->referrals != null) {
+                    $referred_by = User::where('referral_code', $request->referrals)->first()->id;
+                }
+
                 $user = User::create([
                     'name' => $data['name'],
                     'email' => $data['email'],
                     'phone' => $data['phoneNumber'],
                     'referral_code' => uniqid(),
-                    'referred_by' => $referred_by ? $referred_by->id : null,
+                    'referred_by' => $referred_by,
                     'password' => bcrypt($data['password']),
 
                 ]);

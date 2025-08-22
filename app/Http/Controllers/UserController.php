@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\UserBankDetails;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Services\PaymentGatewayService;
 
 class UserController extends Controller
 {
@@ -24,6 +27,72 @@ class UserController extends Controller
         return $this->sucRes(
             $data,
             'Referral list retrieved successfully'
+        );
+    }
+
+    public function bankSave(Request $request)
+    {
+        $check = UserBankDetails::where('user_id', Auth::user()->id)->where('account_number', $request->account_number)->where('bank_code', $request->bank_code)->first();
+
+        if ($check) {
+            return $this->errRes(null, "This bank account already exists for this user.");
+        }
+
+        $resolver = (new PaymentGatewayService())->resolveAccount(
+            $request->account_number,
+            $request->bank_code
+        );
+
+        if ($resolver['status'] == false) {
+            return $this->errRes(null, $resolver['message']);
+        }
+
+        $recipient = (new PaymentGatewayService())->createRecipient(
+            $resolver['data']["account_name"],
+            $request->account_number,
+            $request->bank_code
+        );
+        if ($recipient['status'] == false) {
+            return $this->errRes(null, $recipient['message']);
+        }
+
+        $data = UserBankDetails::create([
+            'user_id' => Auth::user()->id,
+            'account_number' => $request->account_number,
+            'account_name' => $resolver['data']["account_name"],
+            'bank_id' => $resolver['data']["bank_id"],
+            'bank_name' => $request->bank_name,
+            'bank_code' => $request->bank_code,
+            'recipient_code' => $recipient['data']['recipient_code'],
+            'recipient_id' => $recipient['data']['id'],
+            'recipient_integration' => $recipient['data']['integration'],
+            'recipient_type' => $recipient['data']['type'],
+            'recipient_detail' => json_encode($recipient['data']['details']),
+            'recipient_metal' => json_encode($recipient['data']['metadata']),
+        ]);
+
+        return $this->sucRes(
+            $data,
+            'Bank details saved successfully'
+        );
+    }
+    public function bankList()
+    {
+        $banks = UserBankDetails::where('user_id', Auth::user()->id)->get();
+        $data = [];
+        foreach ($banks as $bank) {
+            $data[] = [
+                'bank_id' => encrypt($bank->id),
+                'account_number' => $bank->account_number,
+                'account_name' => $bank->account_name,
+                'bank_name' => $bank->bank_name,
+                'bank_code' => $bank->bank_code,
+            ];
+        }
+
+        return $this->sucRes(
+            $data,
+            'Bank list retrieved successfully'
         );
     }
 }

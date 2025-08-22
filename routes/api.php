@@ -17,6 +17,7 @@ Route::post('/signup', [AuthController::class, 'signup']);
 Route::post('/login', [AuthController::class, 'login']);
 
 
+
 Route::middleware('auth:sanctum')->group(function(){
    Route::post('/create-game', [GameController::class, 'createGame']);
    Route::get('/get-all-games', [GameController::class, 'getAllGames']);
@@ -32,14 +33,24 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::get("/get-my-games", [GameController::class, 'getMyGames']);
     Route::post('/deposit/initialize', [TransactionController::class, 'depositInitialize']);
     Route::post('/deposit/verified', [TransactionController::class, 'depositVerified']);
-    Route::post('/withdraw', [TransactionController::class, 'withdraw']);
+    Route::post('/withdraw/request', [TransactionController::class, 'withdrawRequest']);
     Route::post('/spend-game', [TransactionController::class, 'spendOnGame']);
     Route::get('/resend-otp',[AuthController::class, 'resendOtp']);
     Route::post('/verify-otp', [AuthController::class,'verifyOtp']);
 
+    Route::get('/transaction-list/{type?}', [TransactionController::class, 'transactionList']);
     Route::post('/transaction-pin', [TransactionController::class, 'transactionPin']);
     Route::get('/get-my-played-games', [GameController::class, 'getMyPlayedGames']);
+   Route::get('/paystack/getbank', [PayGatewayController::class, 'getBanks']);
+    Route::post('/paystack/initialize', [PayGatewayController::class, 'paystackInitialize']);
+    Route::get('/paystack/callback', [PayGatewayController::class, 'paystackCallback'])->name('paystack.callback');
+    Route::post('/paystack/withdraw/resolve', [PayGatewayController::class, 'resolveAccount']);
+    Route::post('/paystack/withdraw/recipient', [PayGatewayController::class, 'createRecipient']);
+    Route::post('/paystack/withdraw/initiate', [PayGatewayController::class, 'initiateTransfer']);
 
     Route::get('/referral-list', [UserController::class, 'referralList']);
+
+    Route::post('/bank-save', [UserController::class, 'bankSave']);
+    Route::get('/bank-list', [UserController::class, 'bankList']);
 
 });
