@@ -23,6 +23,9 @@ class GameController extends Controller
 
                 ]);
 
+                $user = $request->user();
+                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+
 
                 return response()->json(['status'=>true], 200);
             }
@@ -36,7 +39,8 @@ class GameController extends Controller
                     'odds'=>$request->odds,
                     'stake'=>$request->stake
                 ]);
-
+                                $user = $request->user();
+                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
                 return response()->json(['status'=>true]);
             }
             if($request->name =='Dice Roll'){
@@ -48,6 +52,8 @@ class GameController extends Controller
                     'odds'=>$request->odds,
                     'dice_type'=>$request->diceType
                 ]);
+                                $user = $request->user();
+                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
                 return response()->json(['status'=>true]);
             }
             if($request->name =="Color Roulette"){
@@ -55,8 +61,11 @@ class GameController extends Controller
                     'creator_id'=>$request->user()->id,
                     'name'=>$request->name,
                     'spin_wheel_result'=>$request->colors,
+                    'odds'=>$request->odds,
                     'stake'=>$request->stake
                 ]);
+                 $user = $request->user();
+                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
                 return response()->json(['status'=>true], 200);
             }
             if($request->name =="Color Roulette2"){
@@ -64,8 +73,11 @@ class GameController extends Controller
                     'creator_id'=>$request->user()->id,
                     'name'=>$request->name,
                     'spin_wheel_result'=>$request->colorSpun,
-                    'stake'=>$request->stake
+                    'stake'=>$request->stake,
+                    'odds'=>$request->odds
                 ]);
+                 $user = $request->user();
+                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
                 return response()->json(['status'=>true], 200);
             }
             if($request->name =="One Number Spin"){
@@ -76,6 +88,8 @@ class GameController extends Controller
                     'stake'=>$request->stake,
                     'odds'=>$request->odds
                 ]);
+                 $user = $request->user();
+                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
 
                 return response()->json(['status'=>true]);
             }
@@ -87,6 +101,8 @@ class GameController extends Controller
                     'stake'=>$request->stake,
                     'odds'=>$request->odds
                 ]);
+                 $user = $request->user();
+                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
                 return response()->json(['status'=>true], 200);
             }
 
@@ -98,6 +114,8 @@ class GameController extends Controller
                     'stake'=>$request->stake,
                     'odds'=>$request->odds
                 ]);
+                 $user = $request->user();
+                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
                 return response()->json(['status'=>true], 200);
             }
              if($request->name =='Spin The Bottle'){
@@ -108,6 +126,8 @@ class GameController extends Controller
                     'stake'=>$request->stake,
                     'odds'=>$request->odds
                 ]);
+                 $user = $request->user();
+                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
                 return response()->json(['status'=>true], 200);
             }
 
@@ -211,7 +231,7 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
             // Reload fresh count to avoid stale data
             $winnersCount = $game->winners()->count();
 
-           
+          
             if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
                 return response()->json([
                     'status' => false,
