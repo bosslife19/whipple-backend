@@ -128,7 +128,7 @@ public function getMyPlayedGames(Request $request)
     $games = $user->playedGames()->with(['winners', 'losers'])->get();
 
     // Format the response
-    \Log::info($games);
+  
     $result = $games->map(function($game) use ($user) {
         
         return [
