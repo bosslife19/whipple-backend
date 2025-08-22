@@ -23,15 +23,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get("/get-game/{id}", [GameController::class, 'getGame']);
     Route::post('/play-game', [GameController::class, 'playGame']);
 
+    Route::get('/paystack/getbank', [PayGatewayController::class, 'getBanks']);
     Route::post('/paystack/initialize', [PayGatewayController::class, 'paystackInitialize']);
     Route::get('/paystack/callback', [PayGatewayController::class, 'paystackCallback'])->name('paystack.callback');
+    Route::post('/paystack/withdraw/resolve', [PayGatewayController::class, 'resolveAccount']);
+    Route::post('/paystack/withdraw/recipient', [PayGatewayController::class, 'createRecipient']);
+    Route::post('/paystack/withdraw/initiate', [PayGatewayController::class, 'initiateTransfer']);
+
 
     Route::post('/deposit/initialize', [TransactionController::class, 'depositInitialize']);
     Route::post('/deposit/verified', [TransactionController::class, 'depositVerified']);
-    Route::post('/withdraw', [TransactionController::class, 'withdraw']);
+    Route::post('/withdraw/request', [TransactionController::class, 'withdrawRequest']);
     Route::post('/spend-game', [TransactionController::class, 'spendOnGame']);
 
     Route::get('/transaction-list/{type?}', [TransactionController::class, 'transactionList']);
     Route::post('/transaction-pin', [TransactionController::class, 'transactionPin']);
+
     Route::get('/referral-list', [UserController::class, 'referralList']);
+    Route::post('/bank-save', [UserController::class, 'bankSave']);
+    Route::get('/bank-list', [UserController::class, 'bankList']);
 });

@@ -13,6 +13,19 @@ return new class extends Migration
     {
         Schema::create('user_bank_details', function (Blueprint $table) {
             $table->id();
+            $table->integer('user_id');
+            $table->string('account_number')->nullable();
+            $table->string('account_name')->nullable();
+            $table->string('bank_id')->nullable();
+            $table->string('bank_name')->nullable();
+            $table->string('bank_code')->nullable();
+            $table->string('recipient_code')->nullable();
+            $table->string('recipient_id')->nullable();
+            $table->string('recipient_integration')->nullable();
+            $table->string('recipient_type')->nullable();
+            $table->json('recipient_detail')->nullable();
+            $table->json('recipient_metal')->nullable();
+            $table->enum('status', ['active', 'block'])->default('active');
             $table->timestamps();
         });
     }

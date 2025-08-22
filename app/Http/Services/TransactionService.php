@@ -41,10 +41,10 @@ class TransactionService
     /**
      * Deposit money
      */
-    public function deposit($amount, $reference = null, $gateway = null, $meta = null)
+    public function deposit($amount, $reference = null, $gateway = null, $meta = null, $ref = null)
     {
 
-        return DB::transaction(function () use ($amount, $reference, $gateway, $meta) {
+        return DB::transaction(function () use ($amount, $reference, $gateway, $meta, $ref) {
 
             // Create transaction
             return Transaction::create([
@@ -52,7 +52,7 @@ class TransactionService
                 'type' => 'deposit',
                 'amount' => $amount,
                 'status' => 'pending',
-                'ref' => uniqid(),
+                'ref' => $ref ?? uniqid(),
                 'gateway' => $gateway,
                 'reference' => $reference,
                 'description' => 'Deposit to wallet',
@@ -63,6 +63,7 @@ class TransactionService
 
     public function depositVerified($ref, $reference = null,  $meta = null, $waiver = true)
     {
+
         return DB::transaction(function () use ($ref, $reference, $meta, $waiver) {
             $user = User::find(Auth::user()->id);
             $adminConf = AdminConfiguration::first();
@@ -123,39 +124,51 @@ class TransactionService
     /**
      * Withdraw money
      */
-    public function withdraw(Request $request)
+    public function withdraw($amount, $gateway, $waiver = true)
     {
-        $request->validate([
-            'amount' => 'required|numeric|min:1'
-        ]);
+        return DB::transaction(function () use ($amount, $gateway, $waiver) {
+            $user = User::find(Auth::user()->id);
+            $adminConf = AdminConfiguration::first();
+            $before = $user->wallet_balance;
+            $after = $before - $amount;
+            $tranAmount = $amount;
 
-        $user = $request->user();
+            if ($waiver && $adminConf->withdraw_charge_waived_point > 0 && $user->whipple_point >= $adminConf->withdraw_charge_waived_point) {
+                $point = $adminConf->withdraw_charge_waived_point;
+                $beforePoint = $user->whipple_point;
+                $afterPoint = $beforePoint - $point;
+                $user->update(['whipple_point' => $afterPoint]);
+            } else {
+                if ($adminConf->withdraw_charge > 0) {
+                    if ($adminConf->withdraw_type == 'amount') {
+                        $fee = $adminConf->withdraw_charge;
+                        $tranAmount = $amount - $fee;
+                    } else if ($adminConf->withdraw_type == 'percent') {
+                        $fee = ($adminConf->withdraw_charge / 100) * $amount;
+                        $tranAmount = $amount - $fee;
+                    }
+                }
+            }
 
-        if ($user->balance < $request->amount) {
-            return response()->json(['message' => 'Insufficient balance'], 422);
-        }
-
-        DB::transaction(function () use ($user, $request) {
-            $before = $user->balance;
-            $after = $before - $request->amount;
-
-            Transaction::create([
+            $trn = Transaction::create([
                 'user_id' => $user->id,
                 'type' => 'withdrawal',
-                'amount' => $request->amount,
+                'ref' => uniqid(),
+                'gateway' => $gateway,
+                'amount' => $amount,
                 'balance_before' => $before,
                 'balance_after' => $after,
+                'fee' => isset($fee) ? $fee : null,
+                'point' => isset($point) ? $point : null,
+                'point_before' => isset($beforePoint) ? $beforePoint : null,
+                'point_after' => isset($afterPoint) ? $afterPoint : null,
                 'status' => 'pending', // pending until approved
                 'description' => 'Withdrawal request',
             ]);
 
-            $user->update(['balance' => $after]);
+            $user->update(['wallet_balance' => $after]);
+            return [$trn, $tranAmount];
         });
-
-        return response()->json([
-            'message' => 'Withdrawal request submitted',
-            'balance' => $user->fresh()->balance
-        ], 201);
     }
 
     /**
