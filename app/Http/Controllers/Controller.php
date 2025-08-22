@@ -10,7 +10,7 @@ abstract class Controller
             'status' => 'error',
             'message' => $message,
             'data' => $data
-        ], 400);
+        ], 402);
     }
 
     public function sucRes($data, $message)
@@ -19,6 +19,6 @@ abstract class Controller
             'status' => 'success',
             'message' => $message,
             'data' => $data
-        ], 200);
+        ], 202);
     }
 }
