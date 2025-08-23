@@ -11,6 +11,23 @@ use App\Http\Services\PaymentGatewayService;
 
 class UserController extends Controller
 {
+
+    public function updateProfile(Request $request){
+        
+        $user = $request->user();
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->phone = $request->phone;
+
+        $user->save();
+
+        
+
+        return response()->json(['status'=>true]);
+
+    }
+
+
     public function referralList()
     {
         $referrals = User::where('referred_by', Auth::user()->id)->get();

@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::post('/spend-game', [TransactionController::class, 'spendOnGame']);
     Route::get('/resend-otp',[AuthController::class, 'resendOtp']);
     Route::post('/verify-otp', [AuthController::class,'verifyOtp']);
+    Route::post('/update-profile', [UserController::class, 'updateProfile']);
 
     Route::get('/transaction-list/{type?}', [TransactionController::class, 'transactionList']);
     Route::post('/transaction-pin', [TransactionController::class, 'transactionPin']);
