@@ -19,6 +19,20 @@ public function players()
                 ->withTimestamps();
                 
 }
+public function winners()
+{
+    return $this->belongsToMany(User::class, 'game_user')
+        ->withTimestamps()
+        ->wherePivot('is_winner', true);
+}
+
+
+public function losers()
+{
+    return $this->belongsToMany(User::class, 'game_user')
+        ->withTimestamps()
+        ->wherePivot('is_loser', true);
+}
 
 public function votes(){
     return $this->hasMany(Vote::class, 'game_id');
