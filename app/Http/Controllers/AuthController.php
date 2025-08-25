@@ -46,10 +46,11 @@ class AuthController extends Controller
 
         ]);
 
-        // Send OTP via email
+      
         Mail::to($user->email)->send(new \App\Mail\SendOtpMail($otp));
                 } catch (\Throwable $th) {
                     \Log::info($th->getMessage());
+                    
                     return response()->json(['error'=>'We could not verify your email. Please make sure it is a valid email']);
                 }
 

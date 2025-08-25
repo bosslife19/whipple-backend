@@ -27,6 +27,20 @@ class UserController extends Controller
 
     }
 
+    public function deductBalance(Request $request){
+
+        $user = $request->user();
+
+        if($user->wallet_balance < $request->amount){
+            return response()->json(['error'=>'You do not have sufficient funds to play this game']);
+        }
+        $user->wallet_balance = $user->wallet_balance - $request->amount;
+        $user->save();
+
+        return response()->json(['status'=>true], 200);
+
+    }
+
 
     public function referralList()
     {

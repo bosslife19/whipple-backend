@@ -25,6 +25,7 @@ class GameController extends Controller
 
                 $user = $request->user();
                 $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                $user->save();
 
 
                 return response()->json(['status'=>true], 200);
@@ -41,6 +42,7 @@ class GameController extends Controller
                 ]);
                                 $user = $request->user();
                 $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                                $user->save();
                 return response()->json(['status'=>true]);
             }
             if($request->name =='Dice Roll'){
@@ -54,6 +56,7 @@ class GameController extends Controller
                 ]);
                                 $user = $request->user();
                 $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                                $user->save();
                 return response()->json(['status'=>true]);
             }
             if($request->name =="Color Roulette"){
@@ -66,6 +69,7 @@ class GameController extends Controller
                 ]);
                  $user = $request->user();
                 $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                                $user->save();
                 return response()->json(['status'=>true], 200);
             }
             if($request->name =="Color Roulette2"){
@@ -78,6 +82,7 @@ class GameController extends Controller
                 ]);
                  $user = $request->user();
                 $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                                $user->save();
                 return response()->json(['status'=>true], 200);
             }
             if($request->name =="One Number Spin"){
@@ -90,6 +95,7 @@ class GameController extends Controller
                 ]);
                  $user = $request->user();
                 $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                                $user->save();
 
                 return response()->json(['status'=>true]);
             }
@@ -103,6 +109,7 @@ class GameController extends Controller
                 ]);
                  $user = $request->user();
                 $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                                $user->save();
                 return response()->json(['status'=>true], 200);
             }
 
@@ -116,6 +123,7 @@ class GameController extends Controller
                 ]);
                  $user = $request->user();
                 $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                                $user->save();
                 return response()->json(['status'=>true], 200);
             }
              if($request->name =='Spin The Bottle'){
@@ -128,6 +136,7 @@ class GameController extends Controller
                 ]);
                  $user = $request->user();
                 $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                                $user->save();
                 return response()->json(['status'=>true], 200);
             }
 

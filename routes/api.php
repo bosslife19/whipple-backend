@@ -48,10 +48,12 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::post('/paystack/withdraw/resolve', [PayGatewayController::class, 'resolveAccount']);
     Route::post('/paystack/withdraw/recipient', [PayGatewayController::class, 'createRecipient']);
     Route::post('/paystack/withdraw/initiate', [PayGatewayController::class, 'initiateTransfer']);
+    Route::post('/deduct-balance', [UserController::class, 'deductBalance']);
 
     Route::get('/referral-list', [UserController::class, 'referralList']);
 
     Route::post('/bank-save', [UserController::class, 'bankSave']);
     Route::get('/bank-list', [UserController::class, 'bankList']);
+
 
 });
