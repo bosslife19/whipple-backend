@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Game;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class GameController extends Controller
 {
@@ -101,6 +102,20 @@ class GameController extends Controller
 
                 return response()->json(['status'=>true]);
             }
+            if($request->name =='Wheel Spin'){
+
+                Game::create([
+                    'creator_id'=>$request->user()->id,
+                    'name'=>$request->name,
+                    'wheel_spin_results'=>$request->numbers,
+                    'stake'=>$request->stake,
+                    'odds'=>$request->odds
+                ]);
+                 $user = $request->user();
+ $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
+                                $user->save();
+                return response()->json(['status'=>true], 200);
+            }
             if($request->name =='Goal Challenge'){
                 Game::create([
                     'creator_id'=>$request->user()->id,
@@ -155,28 +170,50 @@ public function getMyPlayedGames(Request $request)
 {
     $user = $request->user();
 
-    // Get all games user played
-    $games = $user->playedGames()->with(['winners', 'losers'])->get();
+    // Get all games user played (remove duplicates)
+    $games = $user->playedGames()
+        ->with(['winners', 'losers', 'creator'])
+        ->distinct()
+        ->get();
 
     // Format the response
-  
-    $result = $games->map(function($game) use ($user) {
-        
+    $result = $games->map(function ($game) use ($user) {
         return [
-            'id' => $game->id,
-            'name' => $game->name,
-            'status' => $game->status,
-            'odds'=>$game->odds,
-            'creator'=>$game->creator->name,
-            'stake'=>$game->stake,
-            'result' => $game->winners->contains($user->id) 
-                            ? 'won' 
-                            : ($game->losers->contains($user->id) ? 'lost' : 'won'),
+            'id'      => $game->id,
+            'name'    => $game->name,
+            'status'  => $game->status,
+            'odds'    => $game->odds,
+            'creator' => $game->creator->name ?? null,
+            'stake'   => $game->stake,
+            'result'  => $game->winners->contains($user->id)
+                            ? 'won'
+                            : ($game->losers->contains($user->id) ? 'lost' : null),
         ];
     });
 
     return response()->json($result);
 }
+
+public function leaderboard()
+{
+    $winners = DB::table('game_user')
+        ->join('games', 'game_user.game_id', '=', 'games.id')
+        ->join('users', 'game_user.user_id', '=', 'users.id')
+        ->select(
+            'users.id',
+            'users.name',
+            DB::raw('SUM(games.stake) as total_won'),
+            DB::raw('COUNT(games.id) as games_won')
+        )
+        ->where('game_user.is_winner', true)
+        ->groupBy('users.id', 'users.name')
+        ->orderByDesc('total_won')
+        ->limit(10) // top 10
+        ->get();
+
+    return response()->json(['winners'=>$winners, 'status'=>true], 200);
+}
+
 
     public function getAllGames(Request $request){
        
@@ -282,8 +319,50 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
     }
     }
 
+    if($game->name == 'Wheel Spin'){
+        $numbers = explode(',', $game->wheel_spin_results); // ["1","2","3","4","5"]   
+        if (in_array($request->number, $numbers)) {
+            // Reload fresh count to avoid stale data
+            $winnersCount = $game->winners()->count();
+
+          
+            if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // Attach winner
+            $game->winners()->attach($request->user()->id);
+        
+            // Check count again in case two requests came in at the same time
+            $newCount = $game->winners()->count();
+        
+            if ($newCount > $game->number_of_winners) {
+                // Remove the extra winner (this user)
+                $game->winners()->detach($request->user()->id);
+        
+                return response()->json([
+                    'status' => false,
+                    'error' => 'Game is already closed.'
+                ]);
+            }
+        
+            // If exactly $game->number_of_winners now → close the game
+            if ($newCount == $game->number_of_winners) {
+                $game->update(['status' => 'closed']);
+            }
+        
+            return response()->json(['status' => true, 'success' => true]); 
+    }else{
+               $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+        return response()->json(['status'=>true, 'success'=>false]);
+    }
+    }
+
     if($game->name == "Flip The Coin"){
-        \Log::info($request->choice);
+     
         if($game->coin_toss == $request->choice){
             $winnersCount = $game->winners()->count();
         
