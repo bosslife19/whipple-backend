@@ -12,6 +12,7 @@ class GameController extends Controller
             $request->validate(['name'=>'required']);
 
             if($request->name =='Lucky Number'){
+                
                 Game::create([
                     'creator_id'=>$request->user()->id,
                     'name'=>$request->name,
@@ -24,7 +25,8 @@ class GameController extends Controller
                 ]);
 
                 $user = $request->user();
-                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                 $user->save();
 
 
@@ -41,7 +43,7 @@ class GameController extends Controller
                     'stake'=>$request->stake
                 ]);
                                 $user = $request->user();
-                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                 $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true]);
             }
@@ -55,7 +57,7 @@ class GameController extends Controller
                     'dice_type'=>$request->diceType
                 ]);
                                 $user = $request->user();
-                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+ $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true]);
             }
@@ -68,7 +70,7 @@ class GameController extends Controller
                     'stake'=>$request->stake
                 ]);
                  $user = $request->user();
-                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true], 200);
             }
@@ -81,7 +83,7 @@ class GameController extends Controller
                     'odds'=>$request->odds
                 ]);
                  $user = $request->user();
-                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+ $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true], 200);
             }
@@ -94,7 +96,7 @@ class GameController extends Controller
                     'odds'=>$request->odds
                 ]);
                  $user = $request->user();
-                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                 $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
 
                 return response()->json(['status'=>true]);
@@ -108,7 +110,7 @@ class GameController extends Controller
                     'odds'=>$request->odds
                 ]);
                  $user = $request->user();
-                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+                 $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true], 200);
             }
@@ -122,7 +124,7 @@ class GameController extends Controller
                     'odds'=>$request->odds
                 ]);
                  $user = $request->user();
-                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+ $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true], 200);
             }
@@ -135,7 +137,7 @@ class GameController extends Controller
                     'odds'=>$request->odds
                 ]);
                  $user = $request->user();
-                $user->wallet_balance = $user->wallet_balance - intval($request->stake);
+               $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true], 200);
             }
@@ -177,7 +179,8 @@ public function getMyPlayedGames(Request $request)
 }
 
     public function getAllGames(Request $request){
-        $games = Game::where('status', 'open')->where("creator_id", '!=', $request->user()->id)->latest()->get();
+       
+        $games = Game::where('status', 'open')->where("creator_id", '!=', $request->user()->id)->orderBy('stake', 'desc')->get();
 
         return response()->json(['games'=>$games, 'status'=>true]);
     }
@@ -236,7 +239,10 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
     $game->players()->attach($request->user()->id);
 
     if( $game->name == 'Lucky Number'){
-        if ($game->number_result == $request->choiceNumber) {
+        $numbers = explode(',', $game->number_result); // ["1","2","3","4","5"]
+
+
+        if (in_array($request->choiceNumber, $numbers)) {
             // Reload fresh count to avoid stale data
             $winnersCount = $game->winners()->count();
 
@@ -277,7 +283,7 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
     }
 
     if($game->name == "Flip The Coin"){
-        
+        \Log::info($request->choice);
         if($game->coin_toss == $request->choice){
             $winnersCount = $game->winners()->count();
         
