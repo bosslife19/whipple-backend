@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function(){
    Route::get('/get-losers-game', [GameController::class, 'getLosersGame']);
    Route::post('/win-losers-game', [GameController::class, "winLosersGame"]);
    Route::post('/losers-vote', [VoteController::class, 'losersVote']);
+   
    Route::post('/paystack/initialize', [PayGatewayController::class, 'paystackInitialize']);
     Route::get('/paystack/callback', [PayGatewayController::class, 'paystackCallback'])->name('paystack.callback');
     Route::get("/get-my-games", [GameController::class, 'getMyGames']);

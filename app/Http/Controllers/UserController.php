@@ -83,6 +83,8 @@ class UserController extends Controller
             $request->account_number,
             $request->bank_code
         );
+
+        
         if ($recipient['status'] == false) {
             return $this->errRes(null, $recipient['message']);
         }

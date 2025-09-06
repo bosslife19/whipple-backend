@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Game;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -236,6 +237,13 @@ public function leaderboard()
 public function winLosersGame(Request $request){
      $game = Game::find($request->gameId);
 
+    $user = $request->user();
+    $house = User::where('id', $game->creator_id)->first();
+    $user->wallet_balance = $user->wallet_balance + ($game->stake/$game->odds);
+    $user->save();
+    $house->wallet_balance = $house->wallet_balance - ($game->stake/$game->odds);
+    $house->save();
+
      $game->losers_game_won = true;
      $game->save();
 
@@ -311,10 +319,22 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
             if ($newCount == $game->number_of_winners) {
                 $game->update(['status' => 'closed']);
             }
+            $user = $request->user();
+           
+            $deduction = $game->stake/$game->odds;
+            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+
+            $user->save();
+            
+            $game->update(['status'=>'closed']);
+
         
             return response()->json(['status' => true, 'success' => true]);
         }else{
                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+               $house = User::where('id', $game->creator_id)->first();
+               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
+               $house->save();
         return response()->json(['status'=>true, 'success'=>false]);
     }
     }
@@ -352,11 +372,20 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
             // If exactly $game->number_of_winners now → close the game
             if ($newCount == $game->number_of_winners) {
                 $game->update(['status' => 'closed']);
-            }
+            }           
+             $user = $request->user();
+            $deduction = $game->stake/$game->odds;
+            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+            $user->save();
+            $game->update(['status'=>'closed']);
+;
         
             return response()->json(['status' => true, 'success' => true]); 
     }else{
                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+               $house = User::where('id', $game->creator_id)->first();
+               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
+               $house->save();
         return response()->json(['status'=>true, 'success'=>false]);
     }
     }
@@ -393,10 +422,18 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
             if ($newCount == $game->number_of_winners) {
                 $game->update(['status' => 'closed']);
             }
-        
+                    $user = $request->user();
+            $deduction = $game->stake/$game->odds;
+            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+            $user->save();
+            $game->update(['status'=>'closed']);
+;
             return response()->json(['status' => true, 'success' => true]);
         }else{
                     $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                    $house = User::where('id', $game->creator_id)->first();
+               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
+               $house->save();
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
@@ -432,10 +469,21 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
             if ($newCount == $game->number_of_winners) {
                 $game->update(['status' => 'closed']);
             }
+
+
+                        $user = $request->user();
+            $deduction = $game->stake/$game->odds;
+            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+            $user->save();
+            $game->update(['status'=>'closed']);
+;
         
             return response()->json(['status' => true, 'success' => true]);
         }else{
                       $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                      $house = User::where('id', $game->creator_id)->first();
+               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
+               $house->save();
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
@@ -471,10 +519,18 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
             if ($newCount == $game->number_of_winners) {
                 $game->update(['status' => 'closed']);
             }
-        
+                    $user = $request->user();
+            $deduction = $game->stake/$game->odds;
+            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+            $user->save();
+            $game->update(['status'=>'closed']);
+;
             return response()->json(['status' => true, 'success' => true]);
         }else{
                       $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                      $house = User::where('id', $game->creator_id)->first();
+               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
+               $house->save();
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
@@ -511,10 +567,20 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
             if ($newCount == $game->number_of_winners) {
                 $game->update(['status' => 'closed']);
             }
+
+                        $user = $request->user();
+            $deduction = $game->stake/$game->odds;
+            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+            $user->save();
+            $game->update(['status'=>'closed']);
+;
         
             return response()->json(['status' => true, 'success' => true]);
         }else{
                        $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                       $house = User::where('id', $game->creator_id)->first();
+               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
+               $house->save();
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
@@ -551,10 +617,18 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
             if ($newCount == $game->number_of_winners) {
                 $game->update(['status' => 'closed']);
             }
-        
+                    $user = $request->user();
+            $deduction = $game->stake/$game->odds;
+            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+            $user->save();
+            $game->update(['status'=>'closed']);
+;
             return response()->json(['status' => true, 'success' => true]);
         }else{
                       $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                      $house = User::where('id', $game->creator_id)->first();
+               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
+               $house->save();
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
@@ -589,10 +663,18 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
                     if ($newCount == $game->number_of_winners) {
                         $game->update(['status' => 'closed']);
                     }
-                
+                            $user = $request->user();
+            $deduction = $game->stake/$game->odds;
+            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+            $user->save();
+            $game->update(['status'=>'closed']);
+;
                     return response()->json(['status' => true, 'success' => true]);
         }else{
                       $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                      $house = User::where('id', $game->creator_id)->first();
+               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
+               $house->save();
             return response()->json(['status'=>true, 'success'=>false]);
         }
     }
@@ -628,7 +710,12 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
                     if ($newCount == $game->number_of_winners) {
                         $game->update(['status' => 'closed']);
                     }
-                
+                            $user = $request->user();
+            $deduction = $game->stake/$game->odds;
+            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+            $user->save();
+            $game->update(['status'=>'closed']);
+;
                     return response()->json(['status' => true, 'success' => true]);
         }else{
            $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
@@ -667,6 +754,13 @@ if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
                     if ($newCount == $game->number_of_winners) {
                         $game->update(['status' => 'closed']);
                     }
+
+                                $user = $request->user();
+            $deduction = $game->stake/$game->odds;
+            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+            $user->save();
+            $game->update(['status'=>'closed']);
+;
                 
                     return response()->json(['status' => true, 'success' => true]);
         }else{
