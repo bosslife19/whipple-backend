@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function(){
    Route::get('/get-losers-game', [GameController::class, 'getLosersGame']);
    Route::post('/win-losers-game', [GameController::class, "winLosersGame"]);
    Route::post('/losers-vote', [VoteController::class, 'losersVote']);
+   
    Route::post('/paystack/initialize', [PayGatewayController::class, 'paystackInitialize']);
     Route::get('/paystack/callback', [PayGatewayController::class, 'paystackCallback'])->name('paystack.callback');
     Route::get("/get-my-games", [GameController::class, 'getMyGames']);
@@ -37,6 +38,7 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::post('/spend-game', [TransactionController::class, 'spendOnGame']);
     Route::get('/resend-otp',[AuthController::class, 'resendOtp']);
     Route::post('/verify-otp', [AuthController::class,'verifyOtp']);
+    Route::post('/update-profile', [UserController::class, 'updateProfile']);
 
     Route::get('/transaction-list/{type?}', [TransactionController::class, 'transactionList']);
     Route::post('/transaction-pin', [TransactionController::class, 'transactionPin']);
@@ -47,10 +49,13 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::post('/paystack/withdraw/resolve', [PayGatewayController::class, 'resolveAccount']);
     Route::post('/paystack/withdraw/recipient', [PayGatewayController::class, 'createRecipient']);
     Route::post('/paystack/withdraw/initiate', [PayGatewayController::class, 'initiateTransfer']);
+    Route::post('/deduct-balance', [UserController::class, 'deductBalance']);
+    Route::get('/leaderboard', [GameController::class, 'leaderboard']);
 
     Route::get('/referral-list', [UserController::class, 'referralList']);
 
     Route::post('/bank-save', [UserController::class, 'bankSave']);
     Route::get('/bank-list', [UserController::class, 'bankList']);
+
 
 });

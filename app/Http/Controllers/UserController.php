@@ -11,6 +11,37 @@ use App\Http\Services\PaymentGatewayService;
 
 class UserController extends Controller
 {
+
+    public function updateProfile(Request $request){
+        
+        $user = $request->user();
+        $user->name = $request->name;
+        $user->email = $request->email;
+        $user->phone = $request->phone;
+
+        $user->save();
+
+        
+
+        return response()->json(['status'=>true]);
+
+    }
+
+    public function deductBalance(Request $request){
+
+        $user = $request->user();
+
+        if($user->wallet_balance < $request->amount){
+            return response()->json(['error'=>'You do not have sufficient funds to play this game']);
+        }
+        $user->wallet_balance = $user->wallet_balance - $request->amount;
+        $user->save();
+
+        return response()->json(['status'=>true], 200);
+
+    }
+
+
     public function referralList()
     {
         $referrals = User::where('referred_by', Auth::user()->id)->get();
@@ -52,6 +83,8 @@ class UserController extends Controller
             $request->account_number,
             $request->bank_code
         );
+
+        
         if ($recipient['status'] == false) {
             return $this->errRes(null, $recipient['message']);
         }
