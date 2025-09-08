@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VoteController;
 use App\Http\Controllers\PayGatewayController;
@@ -18,32 +19,32 @@ Route::post('/login', [AuthController::class, 'login']);
 
 
 
-Route::middleware('auth:sanctum')->group(function(){
-   Route::post('/create-game', [GameController::class, 'createGame']);
-   Route::get('/get-all-games', [GameController::class, 'getAllGames']);
-   Route::post("/submit-vote", [VoteController::class, 'submitVote']);
-   Route::get("/get-game/{id}", [GameController::class, 'getGame']);
-   Route::post('/play-game', [GameController::class, 'playGame']);
-   Route::post('/play-losers-game', [GameController::class, 'playLosersGame']);
-   Route::get('/get-losers-game', [GameController::class, 'getLosersGame']);
-   Route::post('/win-losers-game', [GameController::class, "winLosersGame"]);
-   Route::post('/losers-vote', [VoteController::class, 'losersVote']);
-   
-   Route::post('/paystack/initialize', [PayGatewayController::class, 'paystackInitialize']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/create-game', [GameController::class, 'createGame']);
+    Route::get('/get-all-games', [GameController::class, 'getAllGames']);
+    Route::post("/submit-vote", [VoteController::class, 'submitVote']);
+    Route::get("/get-game/{id}", [GameController::class, 'getGame']);
+    Route::post('/play-game', [GameController::class, 'playGame']);
+    Route::post('/play-losers-game', [GameController::class, 'playLosersGame']);
+    Route::get('/get-losers-game', [GameController::class, 'getLosersGame']);
+    Route::post('/win-losers-game', [GameController::class, "winLosersGame"]);
+    Route::post('/losers-vote', [VoteController::class, 'losersVote']);
+
+    Route::post('/paystack/initialize', [PayGatewayController::class, 'paystackInitialize']);
     Route::get('/paystack/callback', [PayGatewayController::class, 'paystackCallback'])->name('paystack.callback');
     Route::get("/get-my-games", [GameController::class, 'getMyGames']);
     Route::post('/deposit/initialize', [TransactionController::class, 'depositInitialize']);
     Route::post('/deposit/verified', [TransactionController::class, 'depositVerified']);
     Route::post('/withdraw/request', [TransactionController::class, 'withdrawRequest']);
     Route::post('/spend-game', [TransactionController::class, 'spendOnGame']);
-    Route::get('/resend-otp',[AuthController::class, 'resendOtp']);
-    Route::post('/verify-otp', [AuthController::class,'verifyOtp']);
+    Route::get('/resend-otp', [AuthController::class, 'resendOtp']);
+    Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
     Route::post('/update-profile', [UserController::class, 'updateProfile']);
 
     Route::get('/transaction-list/{type?}', [TransactionController::class, 'transactionList']);
     Route::post('/transaction-pin', [TransactionController::class, 'transactionPin']);
     Route::get('/get-my-played-games', [GameController::class, 'getMyPlayedGames']);
-   Route::get('/paystack/getbank', [PayGatewayController::class, 'getBanks']);
+    Route::get('/paystack/getbank', [PayGatewayController::class, 'getBanks']);
     Route::post('/paystack/initialize', [PayGatewayController::class, 'paystackInitialize']);
     Route::get('/paystack/callback', [PayGatewayController::class, 'paystackCallback'])->name('paystack.callback');
     Route::post('/paystack/withdraw/resolve', [PayGatewayController::class, 'resolveAccount']);
@@ -53,9 +54,14 @@ Route::middleware('auth:sanctum')->group(function(){
     Route::get('/leaderboard', [GameController::class, 'leaderboard']);
 
     Route::get('/referral-list', [UserController::class, 'referralList']);
+    Route::get('/admin/parameter', [UserController::class, 'adminParameter']);
 
     Route::post('/bank-save', [UserController::class, 'bankSave']);
     Route::get('/bank-list', [UserController::class, 'bankList']);
 
-
+    Route::get('/quiz/start', [QuizController::class, 'start']);
+    Route::post('/quiz/answer', [QuizController::class, 'answer']);
+    Route::post('/quiz/boost', [QuizController::class, 'boost']);
+    Route::post('/quiz/complete', [QuizController::class, 'complete']);
+    Route::post('/quiz/close', [QuizController::class, 'close']);
 });
