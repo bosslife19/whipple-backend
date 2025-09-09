@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\UserBankDetails;
+use App\Models\AdminConfiguration;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Services\PaymentGatewayService;
@@ -12,8 +13,9 @@ use App\Http\Services\PaymentGatewayService;
 class UserController extends Controller
 {
 
-    public function updateProfile(Request $request){
-        
+    public function updateProfile(Request $request)
+    {
+
         $user = $request->user();
         $user->name = $request->name;
         $user->email = $request->email;
@@ -21,24 +23,23 @@ class UserController extends Controller
 
         $user->save();
 
-        
 
-        return response()->json(['status'=>true]);
 
+        return response()->json(['status' => true]);
     }
 
-    public function deductBalance(Request $request){
+    public function deductBalance(Request $request)
+    {
 
         $user = $request->user();
 
-        if($user->wallet_balance < $request->amount){
-            return response()->json(['error'=>'You do not have sufficient funds to play this game']);
+        if ($user->wallet_balance < $request->amount) {
+            return response()->json(['error' => 'You do not have sufficient funds to play this game']);
         }
         $user->wallet_balance = $user->wallet_balance - $request->amount;
         $user->save();
 
-        return response()->json(['status'=>true], 200);
-
+        return response()->json(['status' => true], 200);
     }
 
 
@@ -84,7 +85,7 @@ class UserController extends Controller
             $request->bank_code
         );
 
-        
+
         if ($recipient['status'] == false) {
             return $this->errRes(null, $recipient['message']);
         }
@@ -125,6 +126,14 @@ class UserController extends Controller
 
         return $this->sucRes(
             $data,
+            'Bank list retrieved successfully'
+        );
+    }
+
+    public function adminParameter()
+    {
+        return $this->sucRes(
+            AdminConfiguration::first(),
             'Bank list retrieved successfully'
         );
     }
