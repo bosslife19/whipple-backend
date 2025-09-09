@@ -22,9 +22,9 @@ class QuizController extends Controller
             ->whereDate('created_at', Carbon::today())
             ->first();
 
-        // if ($session) {
-        //     return $this->errRes(null, 'You’ve reached daily limit. Try again tomorrow!');
-        // }
+        if ($session) {
+            return $this->errRes(null, 'You’ve reached daily limit. Try again tomorrow!');
+        }
 
         // Create session
         $session = QuizSession::create([
