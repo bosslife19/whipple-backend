@@ -31,7 +31,30 @@ class UserController extends Controller
     public function deductBalance(Request $request)
     {
 
+     return response()->json(['status' => true], 200);
         $user = $request->user();
+
+         if($user->whipple_point>=80){
+            $user->whipple_point = $user->whipple_point - 80;
+            $user->save();
+                    return response()->json(['status'=>true]);
+                }
+                if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;   
+             $user->save(); 
+             if ($user->wallet_balance < $request->amount) {
+            return response()->json(['error' => 'You do not have sufficient funds to play this game']);
+        }
+                return response()->json(['status'=>true], 200);
+                }
+
+
+
+
+
+
+
 
         if ($user->wallet_balance < $request->amount) {
             return response()->json(['error' => 'You do not have sufficient funds to play this game']);

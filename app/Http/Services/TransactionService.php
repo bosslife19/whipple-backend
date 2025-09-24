@@ -167,7 +167,7 @@ class TransactionService
             ]);
 
             $user->update(['wallet_balance' => $after]);
-            return [$trn, $tranAmount];
+            return [$trn, $tranAmount, $before, $beforePoint];
         });
     }
 

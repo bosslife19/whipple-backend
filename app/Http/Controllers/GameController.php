@@ -27,6 +27,16 @@ class GameController extends Controller
                 ]);
 
                 $user = $request->user();
+                if($user->whipple_point>=80){
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->save();
+                    return response()->json(['status'=>true]);
+                }
+                if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
+                return response()->json(['status'=>true], 200);
+                }
 
                 $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                 $user->save();
@@ -45,6 +55,16 @@ class GameController extends Controller
                     'stake'=>$request->stake
                 ]);
                                 $user = $request->user();
+ if($user->whipple_point>=80){
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->save();
+                    return response()->json(['status'=>true]);
+                }
+                                 if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
+                return response()->json(['status'=>true], 200);
+                }
                  $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true]);
@@ -59,6 +79,16 @@ class GameController extends Controller
                     'dice_type'=>$request->diceType
                 ]);
                                 $user = $request->user();
+                                  if($user->whipple_point>=80){
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->save();
+                    return response()->json(['status'=>true]);
+                }
+                                 if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
+                return response()->json(['status'=>true], 200);
+                }
  $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true]);
@@ -72,6 +102,16 @@ class GameController extends Controller
                     'stake'=>$request->stake
                 ]);
                  $user = $request->user();
+                   if($user->whipple_point>=80){
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->save();
+                    return response()->json(['status'=>true]);
+                }
+                  if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
+                return response()->json(['status'=>true], 200);
+                }
                 $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true], 200);
@@ -85,6 +125,16 @@ class GameController extends Controller
                     'odds'=>$request->odds
                 ]);
                  $user = $request->user();
+                  if($user->whipple_point>=80){
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->save();
+                    return response()->json(['status'=>true]);
+                }
+                  if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
+                return response()->json(['status'=>true], 200);
+                }
  $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true], 200);
@@ -98,6 +148,16 @@ class GameController extends Controller
                     'odds'=>$request->odds
                 ]);
                  $user = $request->user();
+                  if($user->whipple_point>=80){
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->save();
+                    return response()->json(['status'=>true]);
+                }
+                  if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
+                return response()->json(['status'=>true], 200);
+                }
                  $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
 
@@ -113,6 +173,16 @@ class GameController extends Controller
                     'odds'=>$request->odds
                 ]);
                  $user = $request->user();
+                   if($user->whipple_point>=80){
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->save();
+                    return response()->json(['status'=>true]);
+                }
+                  if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
+                return response()->json(['status'=>true], 200);
+                }
  $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true], 200);
@@ -126,6 +196,16 @@ class GameController extends Controller
                     'odds'=>$request->odds
                 ]);
                  $user = $request->user();
+                   if($user->whipple_point>=80){
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->save();
+                    return response()->json(['status'=>true]);
+                }
+                  if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
+                return response()->json(['status'=>true], 200);
+                }
                  $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true], 200);
@@ -140,6 +220,16 @@ class GameController extends Controller
                     'odds'=>$request->odds
                 ]);
                  $user = $request->user();
+                   if($user->whipple_point>=80){
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->save();
+                    return response()->json(['status'=>true]);
+                }
+                  if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
+                return response()->json(['status'=>true], 200);
+                }
  $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true], 200);
@@ -153,6 +243,16 @@ class GameController extends Controller
                     'odds'=>$request->odds
                 ]);
                  $user = $request->user();
+                  if($user->whipple_point>=80){
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->save();
+                    return response()->json(['status'=>true]);
+                }
+                  if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
+                return response()->json(['status'=>true], 200);
+                }
                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
                                 $user->save();
                 return response()->json(['status'=>true], 200);
@@ -267,6 +367,45 @@ public function playLosersGame(Request $request){
    }
 
 }
+
+ public function deductBalance($user, $amount)
+
+
+
+    {
+
+  
+
+         if($user->whipple_point>=80){
+            $user->whipple_point = $user->whipple_point - 80;
+            $user->save();
+                   return 'done';
+                }
+                if($user->whipple_point >=40 &&$user->whipple_point<80){
+                    $user->wallet_balance = $user->wallet_balance - (intval($amount) -(intval($amount)*0.25));
+            $user->whipple_point = $user->whipple_point - 40;   
+             $user->save(); 
+             if ($user->wallet_balance < $amount) {
+            return 'insufficient';
+        }
+                return 'done';
+                }
+
+
+
+
+
+
+
+
+        if ($user->wallet_balance < $amount) {
+            return 'insufficient';
+        }
+        $user->wallet_balance = $user->wallet_balance - $amount;
+        $user->save();
+
+        return 'done';
+    }
     public function playGame(Request $request){
         $request->validate(['gameId'=>'required']);
 
@@ -276,9 +415,17 @@ $isAttached = $game->players()->where('user_id', $request->user()->id)->exists()
 if ($isAttached) {
 return response()->json(['error'=>'You have already played this game']);
 }
+
 if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
     $game->losers()->where('user_id', $request->user()->id)->exists()) {
     return response()->json(['error' => 'You have already played this game']);
+}
+$user = $request->user();
+$amount = $game->stake/$game->odds;
+$deductBalance = $this->deductBalance($user, $amount);
+
+if($deductBalance && $deductBalance=='insufficient'){
+    return response()->json(['error'=>'Insufficient Funds']);
 }
 
     $game->players()->attach($request->user()->id);

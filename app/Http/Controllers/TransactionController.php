@@ -46,6 +46,10 @@ class TransactionController extends Controller
                 ])->json();
         } catch (\Exception $e) {
             Log::error('Paystack transfer error: ' . $e->getMessage());
+            $user->wallet_balance = $data[2];
+            $user->whipple_point = $data[3];
+            $user->save();
+
             return $this->errRes(null, 'Failed to process withdrawal request');
         }
 
