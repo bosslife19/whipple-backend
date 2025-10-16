@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Game;
+use App\Models\GamePlayTime;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -270,7 +271,7 @@ class GameController extends Controller
 public function getMyPlayedGames(Request $request)
 {
     $user = $request->user();
-
+    
     // Get all games user played (remove duplicates)
     $games = $user->playedGames()
         ->with(['winners', 'losers', 'creator'])
@@ -279,12 +280,15 @@ public function getMyPlayedGames(Request $request)
 
     // Format the response
     $result = $games->map(function ($game) use ($user) {
+        $gameTime = GamePlayTime::where("game_id", $game->id)->where("user_id", $user->id)->first();
+       
         return [
             'id'      => $game->id,
             'name'    => $game->name,
             'status'  => $game->status,
             'odds'    => $game->odds,
             'creator' => $game->creator->name ?? null,
+            'played_at'=>$gameTime->created_at?? $game->created_at,
             'stake'   => $game->stake,
             'result'  => $game->winners->contains($user->id)
                             ? 'won'
@@ -429,7 +433,10 @@ if($deductBalance && $deductBalance=='insufficient'){
 }
 
     $game->players()->attach($request->user()->id);
-
+GamePlayTime::create([
+    'user_id'=>$request->user()->id,
+    'game_id'=>$game->id
+]);
     if( $game->name == 'Lucky Number'){
         $numbers = explode(',', $game->number_result); // ["1","2","3","4","5"]
 
