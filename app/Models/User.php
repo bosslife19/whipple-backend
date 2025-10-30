@@ -46,6 +46,11 @@ class User extends Authenticatable
         return $this->hasOne(Vote::class, 'player_id');
     }
 
+    public function playerskillgame()
+    {
+        return $this->hasMany(SkillGameMatchPlayers::class, 'match_id');
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *
