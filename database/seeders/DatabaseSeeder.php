@@ -21,5 +21,6 @@ class DatabaseSeeder extends Seeder
         // ]);
         $this->call(AdminConfigurationSeeder::class);
         $this->call(QuestionSeeder::class);
+        $this->call(AddvirtualUser::class);
     }
 }

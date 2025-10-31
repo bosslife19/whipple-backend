@@ -7,6 +7,7 @@ use App\Http\Controllers\GameController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VoteController;
+use App\Http\Controllers\SkillgameController;
 use App\Http\Controllers\PayGatewayController;
 use App\Http\Controllers\TransactionController;
 
@@ -64,4 +65,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/quiz/boost', [QuizController::class, 'boost']);
     Route::post('/quiz/complete', [QuizController::class, 'complete']);
     Route::post('/quiz/close', [QuizController::class, 'close']);
+
+    Route::prefix('skillgame')->group(function () {
+        Route::get('/games', [SkillgameController::class, 'index']);
+        Route::get('/games/{key}', [SkillgameController::class, 'show']);
+
+        // Matchmaking / Matches
+        Route::get('/matches/join/{key}', [SkillgameController::class, 'join']); // expects { game_key, user_id }
+        Route::get('/matches/status/{id}', [SkillgameController::class, 'status']); 
+        Route::get('/matches/start/{id}', [SkillgameController::class, 'start']); 
+        Route::post('/matches/updateScore', [SkillgameController::class, 'updateScore']);
+        Route::post('/matches/complete', [SkillgameController::class, 'complete']);
+        Route::get('/matches/checkStatus/{id}', [SkillgameController::class, 'checkStatus']); 
+        Route::post('/matches/{match}/leave', [SkillgameController::class, 'leave']);
+        Route::get('/matches/{match}', [SkillgameController::class, 'showMatch']);
+
+        // Game play (client submits final results)
+        Route::post('/matches/{match}/submit', [SkillgameController::class, 'submitResult']);
+
+        // Admin / debugging
+        Route::post('/matches/{match}/force_start', [SkillgameController::class, 'forceStart']);
+    });
 });
