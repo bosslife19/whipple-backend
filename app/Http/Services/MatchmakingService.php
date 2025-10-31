@@ -10,6 +10,7 @@ use App\Models\Transaction;
 use Illuminate\Support\Str;
 use App\Models\SkillGameMatch;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Models\SkillGameMatchPlayers;
 
 class MatchmakingService
@@ -213,7 +214,13 @@ class MatchmakingService
 
             // once full, start game automatically
             if ($match->players->count() >= $maxPlayers) {
-                // $this->startMatch($match);
+                $platform = $match->players->sum('stake_paid') * 0.2;
+                $pot = $match->players->sum('stake_paid') * 0.8;
+                $match->update([
+                    'status' => "started",
+                    'platform_fee_percent' => $platform,
+                    'pot_amount' => $pot
+                ]);
             }
         }
 
@@ -236,7 +243,7 @@ class MatchmakingService
             $players[] = [
                 "id" => $ply->id,
                 "match_id" => $ply->match_id,
-                "user_id" => $ply->user->name,
+                "user_id" => $ply->user->id == Auth::user()->id ? "You" : $ply->user->name,
                 "stake_paid" => $ply->stake_paid,
                 "status" => $ply->status,
                 "has_submitted" => $ply->has_submitted,
@@ -249,7 +256,29 @@ class MatchmakingService
 
         return [
             'match' => $matchB,
-            'players' => $players
+            'players' => $players,
+            'playerCount' => $match->players->count()
         ];
+    }
+
+    public function gameWinnings($player, $match, $winnings)
+    {
+        $user = User::find($player->user->id);
+
+        if ($user->referral_code != "demo") {
+            $afterBal = $user->wallet_balance += $winnings;
+            Transaction::create([
+                'user_id' => Auth::user()->id,
+                'type' => 'game',
+                'amount' => $winnings,
+                'status' => 'completed',
+                'ref' => $ref ?? uniqid(),
+                'description' => 'Skill game - ' . $match->game->name,
+                'balance_before' => $user->wallet_balance,
+                'balance_after' => $afterBal
+            ]);
+
+            $user->update(['wallet_balance' => $afterBal]);
+        }
     }
 }

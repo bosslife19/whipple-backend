@@ -21,6 +21,7 @@ return new class extends Migration
             $table->boolean('is_demo')->default(false);
             $table->json('scores')->nullable();
             $table->integer('score')->default(0);
+            $table->double('winnings')->default(0);
             $table->integer('rank')->nullable();
             $table->string('time')->nullable();
             $table->bigInteger('payout')->default(0);

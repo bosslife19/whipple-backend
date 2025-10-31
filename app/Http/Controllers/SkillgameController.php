@@ -50,7 +50,7 @@ class SkillgameController extends Controller
         $user = User::find(Auth::user()->id);
 
         if ($user->wallet_balance < $game->stake) {
-            return response()->json(['message' => 'Insufficient balance'], 422);
+            return response()->json(['status' => 'error', 'message' => 'Insufficient balance'], 422);
         }
 
         DB::beginTransaction();
@@ -79,6 +79,7 @@ class SkillgameController extends Controller
             return response()->json([
                 'match' => $match->load('players'),
                 'player' => $player,
+                'user_balance' => Auth::user()->wallet_balance
             ], 201);
         } catch (\Exception $ex) {
             DB::rollBack();
@@ -89,7 +90,7 @@ class SkillgameController extends Controller
     public function status($matchId)
     {
         $match = $this->matchService->matchStatus($matchId);
-        return response()->json($match);        
+        return response()->json($match);
     }
 
     public function start($matchId)
@@ -102,7 +103,6 @@ class SkillgameController extends Controller
 
     public function updateScore(Request $request)
     {
-        $user = $request->user(); // authenticated user
 
         // $request->validate([
         //     'score' => 'required|numeric|min:0',
@@ -113,21 +113,28 @@ class SkillgameController extends Controller
 
         // Check match status
         if ($match->status == 'waiting') {
-            $match->update(['status' => "started"]);
+            $platform = $match->players->sum('stake_paid') * 0.2;
+            $pot = $match->players->sum('stake_paid') * 0.8;
+            $match->update([
+                'status' => "started",
+                'platform_fee_percent' => $platform,
+                'pot_amount' => $pot
+            ]);
         }
 
         // Find player's record in this match
-        $player = SkillGameMatchPlayers::where('match_id', $match->id)
-            ->where('user_id', $user->id)
-            ->first();
+        // $player = SkillGameMatchPlayers::where('match_id', $match->id)
+        //     ->where('user_id', $user->id)
+        //     ->first();
+        SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $request->matchId)->update([
+            "score" => $request->score,
+        ]);
 
         // if (!$player) {
         //     return response()->json(['error' => 'Player not found in match.'], 404);
         // }
 
         // Update player's score
-        $player->score = $request->score;
-        $player->save();
 
         // Simulate demo players increasing their scores randomly
         $demoPlayers = SkillGameMatchPlayers::where('match_id', $match->id)
@@ -135,9 +142,29 @@ class SkillgameController extends Controller
             ->get();
 
         foreach ($demoPlayers as $demo) {
-            $increase = rand(5, 25); // simulate a small random increase
-            $demo->score += $increase;
-            $demo->save();
+            // Ensure score is numeric
+            $currentScore = (int) $demo->score;
+
+            if ($match->game->key == "math_clash") {
+                $increase = rand(0, 1) ? 10 : 0;
+                $newScore = max(0, $currentScore + $increase);
+                $demo->update(["score" => $newScore, "time" => rand(15, 20)]);
+            }
+            if ($match->game->key == "color_switch") {
+                $increase = rand(0, 1) ? 5 : -2;
+                $newScore = max(0, $currentScore + $increase);
+                $demo->update(["score" => $newScore, "time" => rand(15, 20)]);
+            }
+            if ($match->game->key == "tap_rush") {
+                $increase = rand(0, 1);
+                $newScore = max(0, $currentScore + $increase);
+                $demo->update(["score" => $newScore, "time" => rand(15, 30)]);
+            }
+            if ($match->game->key == "defuse_x") {
+                $possibleScores = [0, 150, 350];
+                $newScore = $possibleScores[array_rand($possibleScores)];
+                $demo->update(["score" => $newScore, "time" => rand(10, 30)]);
+            }
         }
 
         // Reload all players
@@ -155,8 +182,9 @@ class SkillgameController extends Controller
             return [
                 'rank' => $index + 1,
                 'id' => $p->id,
-                'name' => $p->user->name,
+                'name' => $p->user->id == Auth::user()->id ? "You" : $p->user->name,
                 'score' => $p->score,
+                'time' => $p->time,
             ];
         });
 
@@ -171,12 +199,134 @@ class SkillgameController extends Controller
     {
         SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $request->matchId)->update([
             "status" => "finished",
-            "score" => $request->score,
             "time" => $request->time,
+            "score" => $request->score,
             "has_submitted" => true,
         ]);
         $match = SkillgameMatch::findOrFail($request->matchId);
+        if (!$match->finished_at) {
+            $match->update(['finished_at' => Carbon::now()]);
+        }
         return response()->json($match);
+    }
+
+    public function checkStatus($matchId)
+    {
+        $match = SkillgameMatch::with('players.user')->findOrFail($matchId);
+
+        // If match already finished, return results
+        if ($match->status === 'finished') {
+            return response()->json([
+                'status' => 'finished',
+                'results' => $this->getMatchResults($match),
+                'user_winning' => $match->players->where('user_id', Auth::user()->id)->first()->winnings,
+                'user_balance' => Auth::user()->wallet_balance
+            ]);
+        }
+
+        // Check if 10 seconds have passed
+        $elapsed = Carbon::now()->diffInSeconds($match->finished_at);
+        // if (Carbon::parse($match->finished_at)->lessThan(Carbon::now())) {
+        //     $remaining = true;
+        // } else {
+        //     $remaining =  $timeLeft <= 5 ? true : false;
+        // }
+
+        if ($elapsed <= 10) {
+            // Rank and finalize
+            $this->finalizeMatch($match);
+
+            return response()->json([
+                'status' => 'finished',
+                'message' => 'Match finalized after 10 seconds',
+                'results' => $this->getMatchResults($match),
+                'user_winning' => $match->players->where('user_id', Auth::user()->id)->first()->winnings,
+                'user_balance' => Auth::user()->wallet_balance
+            ]);
+        }
+
+        // Still waiting
+        return response()->json([
+            'status' => 'waiting',
+            'elapsed' => $elapsed,
+            'remaining' => 10 - $elapsed,
+            'message' => 'Waiting for match to end',
+        ]);
+    }
+
+    /**
+     * Finalize the match — rank and mark finished
+     */
+    private function finalizeMatch($match)
+    {
+        $players = SkillGameMatchPlayers::where('match_id', $match->id)
+            ->orderByDesc('score')
+            ->get();
+
+        // Assign ranks and winnings
+        $rank = 1;
+        foreach ($players as $p) {
+            $p->rank = $rank++;
+            $p->save();
+        }
+
+        // Example: Winner 75%, Runner-up 25%
+        $match->status = 'finished';
+        $match->finished_at = Carbon::now();
+        $match->save();
+
+        // Award logic — optional
+        $this->assignWinnings($players, $match);
+    }
+
+    /**
+     * Get match results
+     */
+    private function getMatchResults($match)
+    {
+        $players = SkillGameMatchPlayers::with('user')
+            ->where('match_id', $match->id)
+            ->orderBy('rank')
+            ->get();
+
+        return $players->map(function ($p) {
+            return [
+                'rank' => $p->rank,
+                'name' => $p->user->id == Auth::user()->id ? "You" : $p->user->name,
+                'score' => $p->score,
+                'winnings' => $p->winnings ?? 0,
+                'time' => $p->time,
+            ];
+        });
+    }
+
+    /**
+     * Assign winnings (example rule)
+     */
+    private function assignWinnings($players, $match)
+    {
+        $totalPot = $match->pot_amount; // Example stake * 4 players
+        foreach ($players as $p) {
+            if ($match->key == "defuse_x") {
+                if ($p->rank == 1) {
+                    $p->winnings = $totalPot;
+                    $this->matchService->gameWinnings($p, $match, $totalPot);
+                } else {
+                    $p->winnings = 0;
+                }
+            } else {
+                if ($p->rank == 1) {
+                    $p->winnings = $totalPot * 0.75;
+                    $this->matchService->gameWinnings($p, $match, $totalPot * 0.75);
+                } elseif ($p->rank == 2) {
+                    $p->winnings = $totalPot * 0.25;
+                    $this->matchService->gameWinnings($p, $match, $totalPot * 0.25);
+                } else {
+                    $p->winnings = 0;
+                }
+            }
+            $p->save();
+        }
     }
 
     // POST /skillgame/matches/{match}/leave
@@ -285,27 +435,5 @@ class SkillgameController extends Controller
         $m->save();
 
         return response()->json(['message' => 'Match started', 'match' => $m]);
-    }
-
-    // internal finalize function: compute payouts and update DB
-    protected function finalizeMatch(SkillGameMatch $m)
-    {
-        // compute and apply payouts
-        $result = $this->matchService->resolveMatch($m);
-
-        // apply payouts
-        $this->matchService->applyPayouts($result['payouts']);
-
-        // mark match finished and store ranking meta
-        $m->status = 'finished';
-        $m->meta = [
-            'payouts' => $result['payouts'],
-            'platform_fee' => $result['platform_fee'],
-            'total_pot' => $result['total_pot'],
-        ];
-        $m->save();
-
-        // optionally create game_records already done on submit
-        return $result;
     }
 }
