@@ -174,7 +174,7 @@ class MatchmakingService
     public function  matchStatus($matchId)
     {
         $match = SkillgameMatch::with('players.user')->findOrFail($matchId);
-        $maxPlayers = $match->max_players ?? 4;
+        $maxPlayers = $match->max_players ?? 2;
         $timeLeft = max(0, Carbon::parse($match->started_at)->diffInSeconds(now(), false));
         if (Carbon::parse($match->started_at)->lessThan(Carbon::now())) {
             $remaining = true;
@@ -186,13 +186,13 @@ class MatchmakingService
         if ($remaining && $match->status === 'waiting') {
             $currentCount = $match->players->count();
 
-            if ($currentCount < $maxPlayers) {
+            if ($currentCount == 1) {
                 $needed = $maxPlayers - $currentCount;
 
                 $demoUsers = User::where('referral_code', 'demo')
                     ->whereNotIn('id', $match->players->pluck('user_id'))
                     ->inRandomOrder()
-                    ->take($needed)
+                    ->take(1)
                     ->get();
 
                 foreach ($demoUsers as $demo) {
@@ -200,7 +200,7 @@ class MatchmakingService
                         'match_id' => $match->id,
                         'user_id' => $demo->id,
                     ], [
-                        'stake_paid' => 0,
+                        'stake_paid' => $match->game->stake,
                         'status' => 'joined',
                         'has_submitted' => false,
                         'is_demo' => true,
@@ -213,15 +213,15 @@ class MatchmakingService
             }
 
             // once full, start game automatically
-            if ($match->players->count() >= $maxPlayers) {
-                $platform = $match->players->sum('stake_paid') * 0.2;
-                $pot = $match->players->sum('stake_paid') * 0.8;
-                $match->update([
-                    'status' => "started",
-                    'platform_fee_percent' => $platform,
-                    'pot_amount' => $pot
-                ]);
-            }
+            // if ($match->players->count() >= $maxPlayers) {
+            $platform = $match->players->sum('stake_paid') * 0.2;
+            $pot = $match->players->sum('stake_paid') * 0.8;
+            $match->update([
+                'status' => "started",
+                'platform_fee_percent' => $platform,
+                'pot_amount' => $pot
+            ]);
+            // }
         }
 
         $matchB = [
