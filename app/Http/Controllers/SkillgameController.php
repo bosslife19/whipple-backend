@@ -231,8 +231,9 @@ class SkillgameController extends Controller
         // } else {
         //     $remaining =  $timeLeft <= 5 ? true : false;
         // }
-
-        if ($elapsed <= 10) {
+        $unfinishedPlayers = $match->players->where('status', '!=', 'finished')->count();
+        // if ($elapsed <= 10) {
+        if ($unfinishedPlayers == 0) {
             // Rank and finalize
             $this->finalizeMatch($match);
 
@@ -243,6 +244,11 @@ class SkillgameController extends Controller
                 'user_winning' => $match->players->where('user_id', Auth::user()->id)->first()->winnings,
                 'user_balance' => Auth::user()->wallet_balance
             ]);
+        } else {
+            SkillGameMatchPlayers::where('is_demo', 1)->where('match_id', $matchId)->update([
+                "status" => "finished",
+                "has_submitted" => true,
+            ]);
         }
 
         // Still waiting
@@ -251,6 +257,7 @@ class SkillgameController extends Controller
             'elapsed' => $elapsed,
             'remaining' => 10 - $elapsed,
             'message' => 'Waiting for match to end',
+            'unfinishedPlayers' => $unfinishedPlayers,
         ]);
     }
 
