@@ -49,7 +49,7 @@ class SkillgameController extends Controller
         $game = SkillGame::where('key', $key)->first();
         $user = User::find(Auth::user()->id);
 
-        if ($user->wallet_balance < $game->stake) {
+        if ($user->wallet_balance < $game->stake || $user->whipple_point >= 40) {
             return response()->json(['status' => 'error', 'message' => 'Insufficient balance'], 422);
         }
 
@@ -96,8 +96,7 @@ class SkillgameController extends Controller
     public function start($matchId)
     {
         $match = $this->matchService->matchStatus($matchId);
-        SkillgameMatch::findOrFail($matchId)->update(['status' => "started"]);
-        $match['match']['status'] = "started";
+        SkillGameMatchPlayers::where('user_id', Auth::user()->id)->update(['status' => "ready"]);
         return response()->json($match);
     }
 
@@ -126,9 +125,11 @@ class SkillgameController extends Controller
         // $player = SkillGameMatchPlayers::where('match_id', $match->id)
         //     ->where('user_id', $user->id)
         //     ->first();
-        SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $request->matchId)->update([
-            "score" => $request->score,
-        ]);
+        if ($request->ingame == "game") {
+            SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $request->matchId)->update([
+                "score" => $request->score,
+            ]);
+        }
 
         // if (!$player) {
         //     return response()->json(['error' => 'Player not found in match.'], 404);
@@ -156,7 +157,11 @@ class SkillgameController extends Controller
                 $demo->update(["score" => $newScore, "time" => rand(15, 20)]);
             }
             if ($match->game->key == "tap_rush") {
-                $increase = rand(0, 1);
+                if ($request->ingame == "ingame") {
+                    $increase = rand(3, 8);
+                } else {
+                    $increase = 0;
+                }
                 $newScore = max(0, $currentScore + $increase);
                 $demo->update(["score" => $newScore, "time" => rand(15, 30)]);
             }
@@ -314,8 +319,8 @@ class SkillgameController extends Controller
     {
         $totalPot = $match->pot_amount; // Example stake * 4 players
         foreach ($players as $p) {
-            if ($match->key == "defuse_x") {
-                if ($p->rank == 1) {
+            if ($match->game->key == "defuse_x") {
+                if ($p->rank == 1 && $p->score > 0) {
                     $p->winnings = $totalPot;
                     $this->matchService->gameWinnings($p, $match, $totalPot);
                 } else {

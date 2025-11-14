@@ -50,24 +50,42 @@ class MatchmakingService
         $stake = $match->game->stake;
 
         return DB::transaction(function () use ($stake, $match, $user) {
-            if ($user->wallet_balance < $stake) {
+            if ($user->wallet_balance < $stake || $user->whipple_point >= 40) {
                 return response()->json(['message' => 'Insufficient balance'], 422);
             }
-            $before = $user->wallet_balance;
-            $after = $before - $stake;
+            if ($user->whipple_point >= 40) {
+                $beforePoint = $user->whipple_point;
+                $afterPoint = $beforePoint - 40;
 
-            Transaction::create([
-                'user_id' => $user->id,
-                'type' => 'game',
-                'amount' => $stake,
-                'status' => 'completed',
-                'ref' => uniqid(),
-                'description' => 'Skill game - ' . $match->game->name,
-                'balance_before' => $user->wallet_balance,
-                'balance_after' => $after
-            ]);
+                Transaction::create([
+                    'user_id' => $user->id,
+                    'type' => 'game',
+                    'amount' => $stake,
+                    'status' => 'completed',
+                    'ref' => uniqid(),
+                    'description' => 'Skill game - ' . $match->game->name,
+                    'point_before' => $user->wallet_balance,
+                    'point_after' => $afterPoint
+                ]);
 
-            $user->update(['wallet_balance' => $after]);
+                $user->update(['whipple_point' => $afterPoint]);
+            } else {
+                $before = $user->wallet_balance;
+                $after = $before - $stake;
+
+                Transaction::create([
+                    'user_id' => $user->id,
+                    'type' => 'game',
+                    'amount' => $stake,
+                    'status' => 'completed',
+                    'ref' => uniqid(),
+                    'description' => 'Skill game - ' . $match->game->name,
+                    'balance_before' => $user->wallet_balance,
+                    'balance_after' => $after
+                ]);
+
+                $user->update(['wallet_balance' => $after]);
+            }
 
             // add match player
             $existing = SkillGameMatchPlayers::where('match_id', $match->id)
@@ -175,15 +193,17 @@ class MatchmakingService
     {
         $match = SkillgameMatch::with('players.user')->findOrFail($matchId);
         $maxPlayers = $match->max_players ?? 2;
-        $timeLeft = max(0, Carbon::parse($match->started_at)->diffInSeconds(now(), false));
-        if (Carbon::parse($match->started_at)->lessThan(Carbon::now())) {
-            $remaining = true;
-        } else {
-            $remaining =  $timeLeft <= 5 ? true : false;
-        }
+        // $timeLeft = max(0, Carbon::parse($match->started_at)->diffInSeconds(now(), false));
+        // $remaining = false;
+        // if (Carbon::parse($match->started_at)->lessThan(Carbon::now())) {
+        //     $remaining = true;
+        // } else {
+        //     $remaining =  $timeLeft <= 1 ? true : false;
+        // }
 
         // If less than 5 seconds left, fill missing slots with demo users
-        if ($remaining && $match->status === 'waiting') {
+        $readyPlayers = $match->players->where('status', 'ready')->count();
+        if ($readyPlayers >= 1) {
             $currentCount = $match->players->count();
 
             if ($currentCount == 1) {
@@ -201,7 +221,7 @@ class MatchmakingService
                         'user_id' => $demo->id,
                     ], [
                         'stake_paid' => $match->game->stake,
-                        'status' => 'joined',
+                        'status' => 'ready',
                         'has_submitted' => false,
                         'is_demo' => true,
                         'score' => 0,
@@ -212,16 +232,17 @@ class MatchmakingService
                 $match->load('players.user');
             }
 
+            $match = SkillgameMatch::with('players.user')->findOrFail($matchId);
             // once full, start game automatically
-            // if ($match->players->count() >= $maxPlayers) {
-            $platform = $match->players->sum('stake_paid') * 0.2;
-            $pot = $match->players->sum('stake_paid') * 0.8;
-            $match->update([
-                'status' => "started",
-                'platform_fee_percent' => $platform,
-                'pot_amount' => $pot
-            ]);
-            // }
+            if ($readyPlayers >= 2) {
+                $platform = $match->players->sum('stake_paid') * 0.2;
+                $pot = $match->players->sum('stake_paid') * 0.8;
+                $match->update([
+                    'status' => "started",
+                    'platform_fee_percent' => $platform,
+                    'pot_amount' => $pot
+                ]);
+            }
         }
 
         $matchB = [
