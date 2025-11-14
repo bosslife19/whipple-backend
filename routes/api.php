@@ -72,11 +72,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Matchmaking / Matches
         Route::get('/matches/join/{key}', [SkillgameController::class, 'join']); // expects { game_key, user_id }
-        Route::get('/matches/status/{id}', [SkillgameController::class, 'status']); 
-        Route::get('/matches/start/{id}', [SkillgameController::class, 'start']); 
+        Route::get('/matches/status/{id}', [SkillgameController::class, 'status']);
+        Route::get('/matches/start/{id}', [SkillgameController::class, 'start']);
         Route::post('/matches/updateScore', [SkillgameController::class, 'updateScore']);
         Route::post('/matches/complete', [SkillgameController::class, 'complete']);
-        Route::get('/matches/checkStatus/{id}', [SkillgameController::class, 'checkStatus']); 
+        Route::get('/matches/checkStatus/{id}', [SkillgameController::class, 'checkStatus']);
         Route::post('/matches/{match}/leave', [SkillgameController::class, 'leave']);
         Route::get('/matches/{match}', [SkillgameController::class, 'showMatch']);
 
