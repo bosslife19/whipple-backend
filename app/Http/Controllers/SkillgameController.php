@@ -49,7 +49,7 @@ class SkillgameController extends Controller
         $game = SkillGame::where('key', $key)->first();
         $user = User::find(Auth::user()->id);
 
-        if ($user->wallet_balance < $game->stake || $user->whipple_point >= 40) {
+        if ($user->wallet_balance < $game->stake || $user->whipple_point < 40) {
             return response()->json(['status' => 'error', 'message' => 'Insufficient balance'], 422);
         }
 
