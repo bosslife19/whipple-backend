@@ -50,9 +50,12 @@ class MatchmakingService
         $stake = $match->game->stake;
 
         return DB::transaction(function () use ($stake, $match, $user) {
-            if ($user->wallet_balance < $stake || $user->whipple_point < 40) {
-                return response()->json(['message' => 'Insufficient balance'], 422);
+            if($user->whipple_point < 40){
+                if ($user->wallet_balance < $stake) {
+                    return response()->json(['message' => 'Insufficient balance'], 422);
+                }
             }
+            
             if ($user->whipple_point >= 40) {
                 $beforePoint = $user->whipple_point;
                 $afterPoint = $beforePoint - 40;
