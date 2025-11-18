@@ -50,45 +50,6 @@ class MatchmakingService
         $stake = $match->game->stake;
 
         return DB::transaction(function () use ($stake, $match, $user) {
-            if($user->whipple_point < 40){
-                if ($user->wallet_balance < $stake) {
-                    return response()->json(['message' => 'Insufficient balance'], 422);
-                }
-            }
-            
-            if ($user->whipple_point >= 40) {
-                $beforePoint = $user->whipple_point;
-                $afterPoint = $beforePoint - 40;
-
-                Transaction::create([
-                    'user_id' => $user->id,
-                    'type' => 'game',
-                    'amount' => $stake,
-                    'status' => 'completed',
-                    'ref' => uniqid(),
-                    'description' => 'Skill game - ' . $match->game->name,
-                    'point_before' => $user->wallet_balance,
-                    'point_after' => $afterPoint
-                ]);
-
-                $user->update(['whipple_point' => $afterPoint]);
-            } else {
-                $before = $user->wallet_balance;
-                $after = $before - $stake;
-
-                Transaction::create([
-                    'user_id' => $user->id,
-                    'type' => 'game',
-                    'amount' => $stake,
-                    'status' => 'completed',
-                    'ref' => uniqid(),
-                    'description' => 'Skill game - ' . $match->game->name,
-                    'balance_before' => $user->wallet_balance,
-                    'balance_after' => $after
-                ]);
-
-                $user->update(['wallet_balance' => $after]);
-            }
 
             // add match player
             $existing = SkillGameMatchPlayers::where('match_id', $match->id)
@@ -196,20 +157,22 @@ class MatchmakingService
     {
         $match = SkillgameMatch::with('players.user')->findOrFail($matchId);
         $maxPlayers = $match->max_players ?? 2;
-        // $timeLeft = max(0, Carbon::parse($match->started_at)->diffInSeconds(now(), false));
-        // $remaining = false;
-        // if (Carbon::parse($match->started_at)->lessThan(Carbon::now())) {
-        //     $remaining = true;
-        // } else {
-        //     $remaining =  $timeLeft <= 1 ? true : false;
-        // }
 
         // If less than 5 seconds left, fill missing slots with demo users
         $readyPlayers = $match->players->where('status', 'ready')->count();
+        $remaining = false;
+        if ($readyPlayers == 1) {
+            $timeLeft = max(0, Carbon::parse($match->started_at)->diffInSeconds(now(), false));
+            if (Carbon::parse($match->started_at)->lessThan(Carbon::now())) {
+                $remaining = true;
+            } else {
+                $remaining =  $timeLeft <= 1 ? true : false;
+            }
+        }
         if ($readyPlayers >= 1) {
             $currentCount = $match->players->count();
 
-            if ($currentCount == 1) {
+            if ($currentCount == 1 || $remaining) {
                 $needed = $maxPlayers - $currentCount;
 
                 $demoUsers = User::where('referral_code', 'demo')
