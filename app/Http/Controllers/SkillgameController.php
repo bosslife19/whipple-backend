@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\User;
 use App\Models\SkillGame;
 use App\Models\GameRecord;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Models\SkillGameMatch;
 use Illuminate\Validation\Rule;
@@ -101,7 +102,48 @@ class SkillgameController extends Controller
 
     public function start($matchId)
     {
+        $user = User::find(Auth::user()->id);
+        $matchgame = SkillgameMatch::findOrFail($matchId);
         $match = $this->matchService->matchStatus($matchId);
+        if ($user->whipple_point < 40) {
+            if ($user->wallet_balance < $matchgame->game->stake) {
+                return response()->json(['message' => 'Insufficient balance'], 422);
+            }
+        }
+
+        if ($user->whipple_point >= 40) {
+            $beforePoint = $user->whipple_point;
+            $afterPoint = $beforePoint - 40;
+
+            Transaction::create([
+                'user_id' => $user->id,
+                'type' => 'game',
+                'amount' => $matchgame->game->stake,
+                'status' => 'completed',
+                'ref' => uniqid(),
+                'description' => 'Skill game - ' . $matchgame->game->name,
+                'point_before' => $user->wallet_balance,
+                'point_after' => $afterPoint
+            ]);
+
+            $user->update(['whipple_point' => $afterPoint]);
+        } else {
+            $before = $user->wallet_balance;
+            $after = $before - $matchgame->game->stake;
+
+            Transaction::create([
+                'user_id' => $user->id,
+                'type' => 'game',
+                'amount' => $matchgame->game->stake,
+                'status' => 'completed',
+                'ref' => uniqid(),
+                'description' => 'Skill game - ' . $matchgame->game->name,
+                'balance_before' => $user->wallet_balance,
+                'balance_after' => $after
+            ]);
+
+            $user->update(['wallet_balance' => $after]);
+        }
         SkillGameMatchPlayers::where('user_id', Auth::user()->id)->update(['status' => "ready"]);
         return response()->json($match);
     }
@@ -117,15 +159,15 @@ class SkillgameController extends Controller
         $match = SkillgameMatch::with('players.user')->findOrFail($request->matchId);
 
         // Check match status
-        if ($match->status == 'waiting') {
-            $platform = $match->players->sum('stake_paid') * 0.2;
-            $pot = $match->players->sum('stake_paid') * 0.8;
-            $match->update([
-                'status' => "started",
-                'platform_fee_percent' => $platform,
-                'pot_amount' => $pot
-            ]);
-        }
+        // if ($match->status == 'waiting') {
+        //     $platform = $match->players->sum('stake_paid') * 0.2;
+        //     $pot = $match->players->sum('stake_paid') * 0.8;
+        //     $match->update([
+        //         'status' => "started",
+        //         'platform_fee_percent' => $platform,
+        //         'pot_amount' => $pot
+        //     ]);
+        // }
 
         // Find player's record in this match
         // $player = SkillGameMatchPlayers::where('match_id', $match->id)
