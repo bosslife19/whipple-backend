@@ -153,64 +153,169 @@ class MatchmakingService
         });
     }
 
-    public function  matchStatus($matchId)
+    // public function  matchStatus($matchId)
+    // {
+    //     $match = SkillgameMatch::with('players.user')->findOrFail($matchId);
+    //     $maxPlayers = $match->max_players ?? 2;
+
+    //     // If less than 5 seconds left, fill missing slots with demo users
+    //     $readyPlayers = $match->players->where('status', 'ready')->count();
+    //     $remaining = false;
+    //     if ($readyPlayers == 1) {
+    //         $timeLeft = max(0, Carbon::parse($match->started_at)->diffInSeconds(now(), false));
+    //         if (Carbon::parse($match->started_at)->lessThan(Carbon::now())) {
+    //             $remaining = true;
+    //         } else {
+    //             $remaining =  $timeLeft <= 1 ? true : false;
+    //         }
+    //     }
+    //     if ($readyPlayers >= 1) {
+    //         $currentCount = $match->players->count();
+
+    //         if ($currentCount == 1 || $remaining) {
+    //             $needed = $maxPlayers - $currentCount;
+
+    //             $demoUsers = User::where('referral_code', 'demo')
+    //                 ->whereNotIn('id', $match->players->pluck('user_id'))
+    //                 ->inRandomOrder()
+    //                 ->take(1)
+    //                 ->get();
+
+    //             foreach ($demoUsers as $demo) {
+    //                 SkillGameMatchPlayers::firstOrCreate([
+    //                     'match_id' => $match->id,
+    //                     'user_id' => $demo->id,
+    //                 ], [
+    //                     'stake_paid' => $match->game->stake,
+    //                     'status' => 'ready',
+    //                     'has_submitted' => false,
+    //                     'is_demo' => true,
+    //                     'score' => 0,
+    //                 ]);
+    //             }
+
+    //             // refresh relation
+    //             $match->load('players.user');
+    //         }
+
+    //         $match = SkillgameMatch::with('players.user')->findOrFail($matchId);
+    //         // once full, start game automatically
+    //         if ($readyPlayers >= 2) {
+    //             $platform = $match->players->sum('stake_paid') * 0.2;
+    //             $pot = $match->players->sum('stake_paid') * 0.8;
+    //             $match->update([
+    //                 'status' => "started",
+    //                 'platform_fee_percent' => $platform,
+    //                 'pot_amount' => $pot
+    //             ]);
+    //         }
+    //     }
+
+    //     $matchB = [
+    //         "id" => $match->id,
+    //         "game_id" => $match->game_id,
+    //         "max_players" => $match->max_players,
+    //         "match_time_window" => $match->match_time_window,
+    //         "countdown" => $match->countdown,
+    //         "status" => $match->status,
+    //         "pot_amount" => $match->pot_amount,
+    //         "platform_fee_percent" => $match->platform_fee_percent,
+    //         "started_at" => $match->started_at,
+    //         "finished_at" => $match->finished_at,
+    //         "meta" => $match->meta,
+    //     ];
+
+    //     $players = [];
+    //     foreach ($match->players as $ply) {
+    //         $players[] = [
+    //             "id" => $ply->id,
+    //             "match_id" => $ply->match_id,
+    //             "user_id" => $ply->user->id == Auth::user()->id ? "You" : $ply->user->name,
+    //             "stake_paid" => $ply->stake_paid,
+    //             "status" => $ply->status,
+    //             "has_submitted" => $ply->has_submitted,
+    //             "scores" => $ply->scores,
+    //             "score" => $ply->score,
+    //             "rank" => $ply->rank,
+    //             "time" => $ply->time,
+    //         ];
+    //     }
+
+    //     return [
+    //         'match' => $matchB,
+    //         'players' => $players,
+    //         'playerCount' => $match->players->count()
+    //     ];
+    // }
+
+    public function matchStatus($matchId)
     {
         $match = SkillgameMatch::with('players.user')->findOrFail($matchId);
         $maxPlayers = $match->max_players ?? 2;
 
-        // If less than 5 seconds left, fill missing slots with demo users
+        // Count ready and total players
         $readyPlayers = $match->players->where('status', 'ready')->count();
-        $remaining = false;
-        if ($readyPlayers == 1) {
-            $timeLeft = max(0, Carbon::parse($match->started_at)->diffInSeconds(now(), false));
-            if (Carbon::parse($match->started_at)->lessThan(Carbon::now())) {
-                $remaining = true;
-            } else {
-                $remaining =  $timeLeft <= 1 ? true : false;
+        $currentCount = $match->players->count();
+
+        /**
+         * Condition to add a demo user:
+         * 1. Current players = 1
+         * 2. Ready players = 1
+         * 3. 10 seconds has passed since match started_at
+         */
+        $shouldAddDemo = false;
+
+        if ($currentCount == 1 && $readyPlayers == 1) {
+            $startedAt = Carbon::parse($match->started_at);
+
+            if ($startedAt->isPast()) {
+                $secondsPassed = $startedAt->diffInSeconds(now());
+
+                if ($secondsPassed >= 10) {
+                    $shouldAddDemo = true;
+                }
             }
         }
-        if ($readyPlayers >= 1) {
-            $currentCount = $match->players->count();
 
-            if ($currentCount == 1 || $remaining) {
-                $needed = $maxPlayers - $currentCount;
+        // Add demo user only when conditions are met
+        if ($shouldAddDemo) {
+            $demo = User::where('referral_code', 'demo')
+                ->whereNotIn('id', $match->players->pluck('user_id'))
+                ->inRandomOrder()
+                ->first();
 
-                $demoUsers = User::where('referral_code', 'demo')
-                    ->whereNotIn('id', $match->players->pluck('user_id'))
-                    ->inRandomOrder()
-                    ->take(1)
-                    ->get();
-
-                foreach ($demoUsers as $demo) {
-                    SkillGameMatchPlayers::firstOrCreate([
+            if ($demo) {
+                SkillGameMatchPlayers::firstOrCreate(
+                    [
                         'match_id' => $match->id,
                         'user_id' => $demo->id,
-                    ], [
+                    ],
+                    [
                         'stake_paid' => $match->game->stake,
                         'status' => 'ready',
                         'has_submitted' => false,
                         'is_demo' => true,
                         'score' => 0,
-                    ]);
-                }
+                    ]
+                );
 
-                // refresh relation
                 $match->load('players.user');
-            }
-
-            $match = SkillgameMatch::with('players.user')->findOrFail($matchId);
-            // once full, start game automatically
-            if ($readyPlayers >= 2) {
-                $platform = $match->players->sum('stake_paid') * 0.2;
-                $pot = $match->players->sum('stake_paid') * 0.8;
-                $match->update([
-                    'status' => "started",
-                    'platform_fee_percent' => $platform,
-                    'pot_amount' => $pot
-                ]);
             }
         }
 
+        // Start game automatically once 2 ready players exist
+        if ($match->players->where('status', 'ready')->count() >= 2) {
+            $platform = $match->players->sum('stake_paid') * 0.2;
+            $pot = $match->players->sum('stake_paid') * 0.8;
+
+            $match->update([
+                'status' => "started",
+                'platform_fee_percent' => $platform,
+                'pot_amount' => $pot
+            ]);
+        }
+
+        // Prepare output
         $matchB = [
             "id" => $match->id,
             "game_id" => $match->game_id,
@@ -230,7 +335,7 @@ class MatchmakingService
             $players[] = [
                 "id" => $ply->id,
                 "match_id" => $ply->match_id,
-                "user_id" => $ply->user->id == Auth::user()->id ? "You" : $ply->user->name,
+                "user_id" => $ply->user->id == Auth::id() ? "You" : $ply->user->name,
                 "stake_paid" => $ply->stake_paid,
                 "status" => $ply->status,
                 "has_submitted" => $ply->has_submitted,
@@ -247,6 +352,7 @@ class MatchmakingService
             'playerCount' => $match->players->count()
         ];
     }
+
 
     public function gameWinnings($player, $match, $winnings)
     {
