@@ -104,6 +104,9 @@ class SkillgameController extends Controller
     {
         $user = User::find(Auth::user()->id);
         $matchgame = SkillgameMatch::findOrFail($matchId);
+        if ($matchgame->status == "started") {
+            return response()->json(['status' => 'error', 'message' => 'Network error'], 201);
+        }
         $match = $this->matchService->matchStatus($matchId);
         if ($user->whipple_point < 40) {
             if ($user->wallet_balance < $matchgame->game->stake) {
