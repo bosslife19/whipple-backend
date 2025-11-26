@@ -108,46 +108,49 @@ class SkillgameController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Network error'], 201);
         }
         $match = $this->matchService->matchStatus($matchId);
-        if ($user->whipple_point < 40) {
-            if ($user->wallet_balance < $matchgame->game->stake) {
-                return response()->json(['message' => 'Insufficient balance'], 422);
+        $playerMatch = SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $matchId)->first();
+        if ($playerMatch->status == "joined") {
+            if ($user->whipple_point < 40) {
+                if ($user->wallet_balance < $matchgame->game->stake) {
+                    return response()->json(['message' => 'Insufficient balance'], 422);
+                }
+            }
+
+            if ($user->whipple_point >= 40) {
+                $beforePoint = $user->whipple_point;
+                $afterPoint = $beforePoint - 40;
+
+                Transaction::create([
+                    'user_id' => $user->id,
+                    'type' => 'game',
+                    'amount' => $matchgame->game->stake,
+                    'status' => 'completed',
+                    'ref' => uniqid(),
+                    'description' => 'Skill game - ' . $matchgame->game->name,
+                    'point_before' => $user->wallet_balance,
+                    'point_after' => $afterPoint
+                ]);
+
+                $user->update(['whipple_point' => $afterPoint]);
+            } else {
+                $before = $user->wallet_balance;
+                $after = $before - $matchgame->game->stake;
+
+                Transaction::create([
+                    'user_id' => $user->id,
+                    'type' => 'game',
+                    'amount' => $matchgame->game->stake,
+                    'status' => 'completed',
+                    'ref' => uniqid(),
+                    'description' => 'Skill game - ' . $matchgame->game->name,
+                    'balance_before' => $user->wallet_balance,
+                    'balance_after' => $after
+                ]);
+
+                $user->update(['wallet_balance' => $after]);
+                $playerMatch->update(['status' => "ready"]);
             }
         }
-
-        if ($user->whipple_point >= 40) {
-            $beforePoint = $user->whipple_point;
-            $afterPoint = $beforePoint - 40;
-
-            Transaction::create([
-                'user_id' => $user->id,
-                'type' => 'game',
-                'amount' => $matchgame->game->stake,
-                'status' => 'completed',
-                'ref' => uniqid(),
-                'description' => 'Skill game - ' . $matchgame->game->name,
-                'point_before' => $user->wallet_balance,
-                'point_after' => $afterPoint
-            ]);
-
-            $user->update(['whipple_point' => $afterPoint]);
-        } else {
-            $before = $user->wallet_balance;
-            $after = $before - $matchgame->game->stake;
-
-            Transaction::create([
-                'user_id' => $user->id,
-                'type' => 'game',
-                'amount' => $matchgame->game->stake,
-                'status' => 'completed',
-                'ref' => uniqid(),
-                'description' => 'Skill game - ' . $matchgame->game->name,
-                'balance_before' => $user->wallet_balance,
-                'balance_after' => $after
-            ]);
-
-            $user->update(['wallet_balance' => $after]);
-        }
-        SkillGameMatchPlayers::where('user_id', Auth::user()->id)->update(['status' => "ready"]);
         return response()->json($match);
     }
 
