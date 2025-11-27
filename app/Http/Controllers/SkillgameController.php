@@ -132,6 +132,7 @@ class SkillgameController extends Controller
                 ]);
 
                 $user->update(['whipple_point' => $afterPoint]);
+                $playerMatch->update(['status' => "ready"]);
             } else {
                 $before = $user->wallet_balance;
                 $after = $before - $matchgame->game->stake;
