@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use App\Http\Services\TransactionService;
 use App\Http\Services\PaymentGatewayService;
+use Illuminate\Support\Facades\Mail;
 
 class TransactionController extends Controller
 {
@@ -26,29 +27,52 @@ class TransactionController extends Controller
         if (!$request->pin) {
             return $this->errRes(null, 'Please enter your pin');
         }
+        if(!$user->pin) {
+            return $this->errRes(null, 'Please set your transaction pin first');
+        }
         if ($request->pin !== decrypt($user->pin)) {
             return $this->errRes(null, 'The pin entered is not correct!!');
         }
 
-        $bank = UserBankDetails::find(decrypt($request->bank_id));
+        $bank = UserBankDetails::where("bank_code", $request->bank_code)->first();
         if ($user->wallet_balance < $request->amount) {
             return $this->errRes(null, 'Insufficient balance');
         }
 
-        $data = (new TransactionService())->withdraw($request->amount, "paystack");
+
+        $data = (new TransactionService())->withdraw($request->amount, "korapay");
         try {
-            $response = Http::withToken(config('services.paystack.secret_key'))
-                ->post(config('services.paystack.payment_url') . "/transfer", [
-                    "source" => "balance",
-                    "amount" => $data[1] * 100, // Paystack expects kobo
-                    "recipient" => $bank->recipient_code,
-                    "reason" => $request->reason ?? "User Withdrawal"
+            
+            $response = Http::withToken(config('services.korapay.secret_key'))
+
+                ->post("https://api.korapay.com/merchant/api/v1/transactions/disburse", [
+                    "reference" => "ref-" . $user->id . "-" . time() . rand(1000, 9999),
+                    "destination" => [
+                        "type" => "bank_account",
+                        "bank_account" => [
+                            "bank" => $request->bank_code,
+                            "account" => $bank->account_number
+                        ],
+
+                        "amount" => $data[1],
+                        "currency" => "NGN",
+                        "narration" => "Withdrawal payout",
+                        "customer" => [
+                            "name" => $user->name,
+                            "email" => $user->email,
+                        ]
+                    ]
                 ])->json();
+                
         } catch (\Exception $e) {
-            Log::error('Paystack transfer error: ' . $e->getMessage());
+            Log::error('korapay transfer error: ' . $e->getMessage());
             $user->wallet_balance = $data[2];
             $user->whipple_point = $data[3];
             $user->save();
+            Mail::raw("Withdrawal failed from $user->name with $user->email likely due to blacklisting of ip. Make manual transfer of $data[1] to $bank->bank_name with the account number $bank->account_number", function ($message) use ($user) {
+                $message->to("support@mywhipple.com")
+                    ->subject('Withdrawal Failed');
+            });
 
             return $this->errRes(null, 'Failed to process withdrawal request');
         }
@@ -88,6 +112,46 @@ class TransactionController extends Controller
         }
         return $this->sucRes($data, 'Deposit initialized successfully');
     }
+
+    public function handle(Request $request)
+    {
+        $payload = $request->all();
+        \Log::info('Korapay webhook received: ' . json_encode($payload));
+
+        if ($payload['event'] !== 'charge.success') {
+            return response()->json(['ignored' => true]);
+        }
+
+        $reference = $payload['data']['payment_reference'];
+        // Example: ref_45_1764580157488
+
+        // Break reference into parts
+        $parts = explode('_', $reference);
+        // ["ref", "45", "1764580157488"]
+
+        $userId = $parts[1]; // extract the user ID
+
+        $user = User::find($userId);
+
+        Transaction::create([
+            'user_id' => $user->id,
+            'type' => 'deposit',
+            'amount' => $payload['data']['amount'],
+            'status' => 'completed',
+            'ref' => $reference,
+            'gateway' => 'korapay',
+            'reference' => $reference,
+            'description' => 'Deposit to wallet',
+            'meta' => null,
+        ]);
+
+        $user->wallet_balance = $user->wallet_balance + intval($payload['data']['amount']);
+        $user->save();
+        return response()->json(['message' => 'Webhook received'], 200);
+    }
+
+
+
 
     public function transactionPin(Request $request)
     {

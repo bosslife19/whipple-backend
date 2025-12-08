@@ -10,13 +10,21 @@ class PaymentGatewayService
     public function resolveAccount($account_number, $bank_code)
     {
 
-        $response = Http::withToken(config('services.paystack.secret_key'))
-            ->get(config('services.paystack.payment_url') . "/bank/resolve", [
-                'account_number' => $account_number,
-                'bank_code' => $bank_code
+        try {
+            //code...
+            $response = Http::withToken(config('services.korapay.secret_key'))
+            ->post("https://api.korapay.com/merchant/api/v1/misc/banks/resolve", [
+                'account' => $account_number,
+                'bank' => $bank_code
             ]);
 
         return $response->json();
+        } catch (\Throwable $th) {
+            //throw $th;
+            Log::info($th->getMessage());
+            return null;
+        }
+        
     }
 
     /**

@@ -13,13 +13,13 @@ class PayGatewayController extends Controller
 
     public function getBanks()
     {
-        $response = Http::withToken(config('services.paystack.secret_key'))
-            ->get(config('services.paystack.payment_url') . '/bank');
+        $response = Http::withToken(config('services.korapay.public_key'))
+            ->get("https://api.korapay.com/merchant/api/v1/misc/banks?countryCode=NG");
 
         if ($response->failed()) {
             return response()->json([
                 'status' => false,
-                'message' => 'Unable to fetch banks from Paystack'
+                'message' => 'Unable to fetch banks'
             ], 500);
         }
 

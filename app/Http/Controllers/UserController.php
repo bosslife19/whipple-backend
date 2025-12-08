@@ -87,6 +87,7 @@ class UserController extends Controller
 
     public function bankSave(Request $request)
     {
+        \Log::info($request->all());
         $check = UserBankDetails::where('user_id', Auth::user()->id)->where('account_number', $request->account_number)->where('bank_code', $request->bank_code)->first();
 
         if ($check) {
@@ -97,35 +98,36 @@ class UserController extends Controller
             $request->account_number,
             $request->bank_code
         );
+       
 
         if ($resolver['status'] == false) {
             return $this->errRes(null, $resolver['message']);
         }
 
-        $recipient = (new PaymentGatewayService())->createRecipient(
-            $resolver['data']["account_name"],
-            $request->account_number,
-            $request->bank_code
-        );
+        // $recipient = (new PaymentGatewayService())->createRecipient(
+        //     $resolver['data']["account_name"],
+        //     $request->account_number,
+        //     $request->bank_code
+        // );
 
 
-        if ($recipient['status'] == false) {
-            return $this->errRes(null, $recipient['message']);
-        }
+        // if ($recipient['status'] == false) {
+        //     return $this->errRes(null, $recipient['message']);
+        // }
 
         $data = UserBankDetails::create([
             'user_id' => Auth::user()->id,
             'account_number' => $request->account_number,
             'account_name' => $resolver['data']["account_name"],
-            'bank_id' => $resolver['data']["bank_id"],
+            // 'bank_id' => $resolver['data']["bank_id"],
             'bank_name' => $request->bank_name,
             'bank_code' => $request->bank_code,
-            'recipient_code' => $recipient['data']['recipient_code'],
-            'recipient_id' => $recipient['data']['id'],
-            'recipient_integration' => $recipient['data']['integration'],
-            'recipient_type' => $recipient['data']['type'],
-            'recipient_detail' => json_encode($recipient['data']['details']),
-            'recipient_metal' => json_encode($recipient['data']['metadata']),
+            // 'recipient_code' => $recipient['data']['recipient_code'],
+            // 'recipient_id' => $recipient['data']['id'],
+            // 'recipient_integration' => $recipient['data']['integration'],
+            // 'recipient_type' => $recipient['data']['type'],
+            // 'recipient_detail' => json_encode($recipient['data']['details']),
+            // 'recipient_metal' => json_encode($recipient['data']['metadata']),
         ]);
 
         return $this->sucRes(
@@ -139,7 +141,7 @@ class UserController extends Controller
         $data = [];
         foreach ($banks as $bank) {
             $data[] = [
-                'bank_id' => encrypt($bank->id),
+
                 'account_number' => $bank->account_number,
                 'account_name' => $bank->account_name,
                 'bank_name' => $bank->bank_name,
