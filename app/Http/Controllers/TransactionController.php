@@ -34,7 +34,7 @@ class TransactionController extends Controller
             return $this->errRes(null, 'The pin entered is not correct!!');
         }
 
-        $bank = UserBankDetails::where("bank_code", $request->bank_code)->first();
+        $bank = UserBankDetails::where("bank_code", $request->bank_code)->where('user_id', $user->id)->where('account_number', $request->accountNumber)->first();
         if ($user->wallet_balance < $request->amount) {
             return $this->errRes(null, 'Insufficient balance');
         }
