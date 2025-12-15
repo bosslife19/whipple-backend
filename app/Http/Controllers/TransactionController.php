@@ -78,6 +78,10 @@ class TransactionController extends Controller
         }
 
         if ($response['status'] == false) {
+
+                        $user->wallet_balance = $data[2];
+            $user->whipple_point = $data[3];
+            $user->save();
             return $this->errRes(null, $response['message']);
         } else {
             $data[0]->update([
@@ -144,8 +148,19 @@ class TransactionController extends Controller
             'description' => 'Deposit to wallet',
             'meta' => null,
         ]);
+        $deducted =intval($payload['data']['amount']) -  (intval($payload['data']['amount']) * 0.01); // 1.5% fee
 
-        $user->wallet_balance = $user->wallet_balance + intval($payload['data']['amount']);
+        $user->wallet_balance = $user->wallet_balance + $deducted;
+        $referrer_id = $user->referred_by;
+        if($referrer_id){
+            $referrer = User::find($referrer_id);
+            
+            $referrer->whipple_point = intval($referrer->whipple_point) + 4;
+            $referrer->save();
+            $user->referred_by = null;
+        }
+        
+        
         $user->save();
         return response()->json(['message' => 'Webhook received'], 200);
     }
