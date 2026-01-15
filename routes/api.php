@@ -35,6 +35,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-losers-game', [GameController::class, 'getLosersGame']);
     Route::post('/win-losers-game', [GameController::class, "winLosersGame"]);
     Route::post('/losers-vote', [VoteController::class, 'losersVote']);
+    Route::post('/user-push-token', [UserController::class, 'setPushToken']);
+    Route::post('/send-push-notifications', [UserController::class, 'sendPushNotifications']);
 
     Route::post('/paystack/initialize', [PayGatewayController::class, 'paystackInitialize']);
     Route::get('/paystack/callback', [PayGatewayController::class, 'paystackCallback'])->name('paystack.callback');
