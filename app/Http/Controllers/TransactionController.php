@@ -22,6 +22,9 @@ class TransactionController extends Controller
             return $this->errRes(null, 'Invalid amount');
         }
 
+        if($request->amount < 500){
+            return $this->errRes(null, 'You can only withdraw 500 and above');
+        }
         $user = User::find(Auth::user()->id);
 
         if (!$request->pin) {

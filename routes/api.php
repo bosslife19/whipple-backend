@@ -22,7 +22,7 @@ Route::post('/forgot-password', [ForgotPasswordController::class, 'sendCode']);
 Route::post('/verify-reset-code', [ForgotPasswordController::class, 'verifyCode']);
 Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 Route::post('/korapay/webhook', [TransactionController::class, 'handle']);
-
+Route::post('/send-push-notifications', [UserController::class, 'sendPushNotifications']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -36,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/win-losers-game', [GameController::class, "winLosersGame"]);
     Route::post('/losers-vote', [VoteController::class, 'losersVote']);
     Route::post('/user-push-token', [UserController::class, 'setPushToken']);
-    Route::post('/send-push-notifications', [UserController::class, 'sendPushNotifications']);
+   
 
     Route::post('/paystack/initialize', [PayGatewayController::class, 'paystackInitialize']);
     Route::get('/paystack/callback', [PayGatewayController::class, 'paystackCallback'])->name('paystack.callback');
