@@ -83,9 +83,13 @@ class SkillgameController extends Controller
             }
             DB::commit();
 
+            $elapsed = Carbon::parse($match->created_at)->diffInSeconds(now());
+            $countdown = (int) max(0, 30 - $elapsed);
+
             return response()->json([
                 'match' => $match->load('players'),
                 'player' => $player,
+                'countdown' => $countdown,
                 'user_balance' => Auth::user()->wallet_balance
             ], 201);
         } catch (\Exception $ex) {
@@ -105,8 +109,24 @@ class SkillgameController extends Controller
         $user = User::find(Auth::user()->id);
         $matchgame = SkillgameMatch::findOrFail($matchId);
         if ($matchgame->status == "started") {
-            return response()->json(['status' => 'error', 'message' => 'Network error'], 201);
+            return response()->json(['status' => 'error', 'message' => 'Network error'], 400);
         }
+        if ($matchgame->players->count() == 1) {
+            $todayFinishedCount = DB::table('skill_game_match_players as mp')
+                ->join('skill_game_matches as m', 'm.id', '=', 'mp.match_id')
+                ->join('skill_games as g', 'g.id', '=', 'm.game_id')
+                ->where('mp.user_id', Auth::id())
+                ->where('g.key', $matchgame->game->key)
+                ->where('m.status', 'finished')
+                ->whereDate('mp.created_at', today())
+                ->distinct('m.id')
+                ->count('m.id');
+            if ($matchgame->game->key != "tap_rush" || $todayFinishedCount >= 50) {
+                $matchgame->update(['status' => 'cancelled']);
+                return response()->json(['status' => 'error', 'message' => 'No users available for this game. Please try again later.'], 400);
+            }
+        }
+
         $match = $this->matchService->matchStatus($matchId);
         $playerMatch = SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $matchId)->first();
         if ($playerMatch->status == "joined") {
