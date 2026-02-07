@@ -278,7 +278,7 @@ class MatchmakingService
         }
 
         // Add demo user only when conditions are met
-        if ($shouldAddDemo) {
+        if ($shouldAddDemo && $match->game->key === 'tap_rush') {
             $demo = User::where('referral_code', 'demo')
                 ->whereNotIn('id', $match->players->pluck('user_id'))
                 ->inRandomOrder()
@@ -301,6 +301,10 @@ class MatchmakingService
 
                 $match->load('players.user');
             }
+        }
+
+        if ($shouldAddDemo && $match->game->key !== 'tap_rush') {
+            $match->update(['status' => 'cancelled']);
         }
 
         // Start game automatically once 2 ready players exist
