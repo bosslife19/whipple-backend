@@ -7,6 +7,7 @@ use App\Http\Controllers\GameController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VoteController;
+use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\SkillgameController;
 use App\Http\Controllers\PayGatewayController;
 use App\Http\Controllers\TransactionController;
@@ -86,4 +87,13 @@ Route::middleware('auth:sanctum')->group(function () {
         // Admin / debugging
         Route::post('/matches/{match}/force_start', [SkillgameController::class, 'forceStart']);
     });
+
+    Route::prefix('forecast')->group(function () {
+
+        Route::get('/{type}', [ForecastController::class, 'list']);
+        Route::post('/submit', [ForecastController::class, 'submit']);
+
+        Route::get('/my-forecasts', [ForecastController::class, 'myForecasts']);
+    });
+
 });
