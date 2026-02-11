@@ -251,10 +251,14 @@ class MatchmakingService
     public function matchStatus($matchId)
     {
         $match = SkillgameMatch::with('players.user')->findOrFail($matchId);
+        $matchgame = SkillgameMatch::findOrFail($matchId);
         $maxPlayers = $match->max_players ?? 2;
+        $user = User::find(Auth::user()->id);
+        $playerMatch = SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $matchId)->first();
 
         // Count ready and total players
         $readyPlayers = $match->players->where('status', 'ready')->count();
+        $eliminatedPlayers = $match->players->where('status', 'eliminated')->count();
         $currentCount = $match->players->count();
 
         /**
@@ -271,8 +275,55 @@ class MatchmakingService
             if ($startedAt->isPast()) {
                 $secondsPassed = $startedAt->diffInSeconds(now());
 
-                if ($secondsPassed >= 10) {
+                if ($secondsPassed >= 5) {
                     $shouldAddDemo = true;
+                }
+            }
+        }
+
+        $startedAt = Carbon::parse($match->started_at);
+        $secondsPassed = $startedAt->diffInSeconds(now());
+        if ($startedAt->isPast()) {
+            if ($secondsPassed >= 10) {
+                $match->update(['status' => 'cancelled']);
+            }
+        }
+        if($playerMatch->status == "ready"){             
+            if($readyPlayers > 1 || $eliminatedPlayers >= 1){
+                if ($user->whipple_point >= 40) {
+                    $beforePoint = $user->whipple_point;
+                    $afterPoint = $beforePoint - 40;
+
+                    Transaction::create([
+                        'user_id' => $user->id,
+                        'type' => 'game',
+                        'amount' => $matchgame->game->stake,
+                        'status' => 'completed',
+                        'ref' => uniqid(),
+                        'description' => 'Skill game - ' . $matchgame->game->name,
+                        'point_before' => $user->wallet_balance,
+                        'point_after' => $afterPoint
+                    ]);
+
+                    $user->update(['whipple_point' => $afterPoint]);
+                    $playerMatch->update(['status' => "eliminated"]);
+                } else {
+                    $before = $user->wallet_balance;
+                    $after = $before - $matchgame->game->stake;
+
+                    Transaction::create([
+                        'user_id' => $user->id,
+                        'type' => 'game',
+                        'amount' => $matchgame->game->stake,
+                        'status' => 'completed',
+                        'ref' => uniqid(),
+                        'description' => 'Skill game - ' . $matchgame->game->name,
+                        'balance_before' => $user->wallet_balance,
+                        'balance_after' => $after
+                    ]);
+
+                    $user->update(['wallet_balance' => $after]);
+                    $playerMatch->update(['status' => "eliminated"]);
                 }
             }
         }
@@ -292,7 +343,7 @@ class MatchmakingService
                     ],
                     [
                         'stake_paid' => $match->game->stake,
-                        'status' => 'ready',
+                        'status' => 'eliminated',
                         'has_submitted' => false,
                         'is_demo' => true,
                         'score' => 0,
@@ -308,7 +359,7 @@ class MatchmakingService
         }
 
         // Start game automatically once 2 ready players exist
-        if ($match->players->where('status', 'ready')->count() >= 2) {
+        if ($match->players->where('status', 'eliminated')->count() >= 2) {
             $platform = $match->players->sum('stake_paid') * 0.2;
             $pot = $match->players->sum('stake_paid') * 0.8;
 

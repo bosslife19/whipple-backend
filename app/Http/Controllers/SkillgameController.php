@@ -111,6 +111,7 @@ class SkillgameController extends Controller
         if ($matchgame->status == "started") {
             return response()->json(['status' => 'error', 'message' => 'Network error'], 400);
         }
+
         if ($matchgame->players->count() == 1) {
             $todayFinishedCount = DB::table('skill_game_match_players as mp')
                 ->join('skill_game_matches as m', 'm.id', '=', 'mp.match_id')
@@ -136,41 +137,7 @@ class SkillgameController extends Controller
                 }
             }
 
-            if ($user->whipple_point >= 40) {
-                $beforePoint = $user->whipple_point;
-                $afterPoint = $beforePoint - 40;
-
-                Transaction::create([
-                    'user_id' => $user->id,
-                    'type' => 'game',
-                    'amount' => $matchgame->game->stake,
-                    'status' => 'completed',
-                    'ref' => uniqid(),
-                    'description' => 'Skill game - ' . $matchgame->game->name,
-                    'point_before' => $user->wallet_balance,
-                    'point_after' => $afterPoint
-                ]);
-
-                $user->update(['whipple_point' => $afterPoint]);
-                $playerMatch->update(['status' => "ready"]);
-            } else {
-                $before = $user->wallet_balance;
-                $after = $before - $matchgame->game->stake;
-
-                Transaction::create([
-                    'user_id' => $user->id,
-                    'type' => 'game',
-                    'amount' => $matchgame->game->stake,
-                    'status' => 'completed',
-                    'ref' => uniqid(),
-                    'description' => 'Skill game - ' . $matchgame->game->name,
-                    'balance_before' => $user->wallet_balance,
-                    'balance_after' => $after
-                ]);
-
-                $user->update(['wallet_balance' => $after]);
-                $playerMatch->update(['status' => "ready"]);
-            }
+            $playerMatch->update(['status' => "ready"]);
         }
         return response()->json($match);
     }
@@ -277,15 +244,23 @@ class SkillgameController extends Controller
 
     public function complete(Request $request)
     {
-        SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $request->matchId)->update([
-            "status" => "finished",
-            "time" => $request->time,
-            "score" => $request->score,
-            "has_submitted" => true,
-        ]);
+        $playerMatch = SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $request->matchId)->first();
         $match = SkillgameMatch::findOrFail($request->matchId);
         if (!$match->finished_at) {
             $match->update(['finished_at' => Carbon::now()]);
+            $playerMatch->update([
+                "status" => "finished",
+                "time" => $request->time,
+                "score" => $request->score,
+                "has_submitted" => true,
+            ]);
+        }else{
+            $playerMatch->update([
+                "status" => "finished",
+                "time" => $request->time,
+                // "score" => $request->score,
+                "has_submitted" => true,
+            ]);
         }
         return response()->json($match);
     }
@@ -306,14 +281,13 @@ class SkillgameController extends Controller
 
         // Check if 10 seconds have passed
         $elapsed = Carbon::now()->diffInSeconds($match->finished_at);
-        // if (Carbon::parse($match->finished_at)->lessThan(Carbon::now())) {
-        //     $remaining = true;
-        // } else {
-        //     $remaining =  $timeLeft <= 5 ? true : false;
-        // }
+
+        $finishedAt = Carbon::parse($match->finished_at);
+        $secondsPassed = $finishedAt->diffInSeconds(now());
+
         $unfinishedPlayers = $match->players->where('status', '!=', 'finished')->count();
         // if ($elapsed <= 10) {
-        if ($unfinishedPlayers == 0) {
+        if ($unfinishedPlayers == 0 || $secondsPassed >= 5) {
             // Rank and finalize
             $this->finalizeMatch($match);
 

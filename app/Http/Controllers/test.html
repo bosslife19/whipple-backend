@@ -1,0 +1,525 @@
+<!-- PASTE THIS ENTIRE CODE INTO ELEMENTOR HTML WIDGET -->
+
+<style>
+    /* Force full width - remove Elementor container padding */
+    .elementor-widget-container {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .bladi-header {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100vw !important;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw !important;
+        margin-right: -50vw !important;
+    }
+
+    .bladi-header * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    /* Announcement Bar */
+    .bladi-announcement-bar {
+        background: linear-gradient(to right, #55A630, #3F9716, #2D770A);
+        color: #042D30;
+        padding: 12px 20px;
+        text-align: center;
+        font-size: 14px;
+        position: relative;
+    }
+
+    .bladi-announcement-bar .content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .bladi-announcement-bar .close-btn {
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #fff;
+    }
+
+    /* Main Header */
+    .bladi-main-header {
+        background-color: #000;
+        padding: 20px 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 40px;
+    }
+
+    .bladi-logo-container {
+        flex-shrink: 0;
+    }
+
+    .bladi-logo {
+        height: 60px;
+        width: 70px;
+    }
+
+    .bladi-search-container {
+        flex-grow: 1;
+        max-width: 600px;
+    }
+
+    .bladi-search-box {
+        display: flex;
+        align-items: center;
+        background-color: #e5e5e5;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .bladi-search-box input {
+        flex-grow: 1;
+        border: none;
+        padding: 12px 16px;
+        font-size: 14px;
+        background-color: transparent;
+        outline: none;
+    }
+
+    .bladi-search-box input::placeholder {
+        color: #666;
+    }
+
+    .bladi-voice-search-btn,
+    .bladi-search-btn {
+        background: none;
+        border: none;
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bladi-voice-search-btn svg,
+    .bladi-search-btn svg {
+        width: 20px;
+        height: 20px;
+        fill: #333;
+    }
+
+    .bladi-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-shrink: 0;
+    }
+
+    .bladi-language-selector {
+        background-color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .bladi-flag {
+        width: 24px;
+        height: 16px;
+    }
+
+    .bladi-icon-btn {
+        background: none;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        font-size: 24px;
+        padding: 8px;
+    }
+
+    /* Navigation Menu */
+    .bladi-navigation {
+        background-color: #f5f5f5;
+        border-bottom: 1px solid #ddd;
+        position: relative;
+    }
+
+    .bladi-hamburger-menu {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 28px;
+        cursor: pointer;
+        padding: 15px 20px;
+        color: #000;
+    }
+
+    .bladi-nav-menu {
+        display: flex;
+        justify-content: center;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        flex-wrap: wrap;
+    }
+
+    .bladi-nav-menu li {
+        position: relative;
+    }
+
+    .bladi-nav-menu > li > a {
+        display: block;
+        padding: 16px 24px;
+        color: #000;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+
+    .bladi-nav-menu > li > a:hover {
+        background-color: #e0e0e0;
+    }
+
+    .bladi-nav-menu .bladi-dropdown > a::after {
+        content: '▼';
+        font-size: 10px;
+        margin-left: 6px;
+    }
+
+    /* Dropdown Submenu */
+    .bladi-submenu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background-color: #fff;
+        min-width: 220px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        list-style: none;
+        padding: 8px 0;
+        margin: 0;
+        z-index: 1000;
+    }
+
+    .bladi-submenu li a {
+        display: block;
+        padding: 12px 20px;
+        color: #333;
+        text-decoration: none;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+
+    .bladi-submenu li a:hover {
+        background-color: #f5f5f5;
+    }
+
+    .bladi-dropdown:hover .bladi-submenu {
+        display: block;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .bladi-main-header {
+            padding: 15px 20px;
+            gap: 20px;
+        }
+
+        .bladi-logo {
+            height: 60px;
+        }
+
+        .bladi-search-container {
+            max-width: 400px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .bladi-main-header {
+            flex-wrap: wrap;
+        }
+
+        .bladi-search-container {
+            order: 3;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        /* Hamburger Menu */
+        .bladi-hamburger-menu {
+            display: block;
+        }
+
+        .bladi-nav-menu {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            background-color: #f5f5f5;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            z-index: 999;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .bladi-nav-menu.active {
+            display: flex;
+        }
+
+        .bladi-nav-menu li {
+            width: 100%;
+        }
+
+        .bladi-nav-menu > li > a {
+            padding: 14px 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .bladi-nav-menu .bladi-dropdown > a::after {
+            float: right;
+        }
+
+        /* Mobile Submenu */
+        .bladi-submenu {
+            position: static;
+            display: none;
+            box-shadow: none;
+            background-color: #e8e8e8;
+            padding: 0;
+        }
+
+        .bladi-submenu.active {
+            display: block;
+        }
+
+        .bladi-submenu li a {
+            padding: 12px 20px 12px 40px;
+            border-bottom: 1px solid #d0d0d0;
+        }
+
+        .bladi-dropdown.active .bladi-submenu {
+            display: block;
+        }
+    }
+</style>
+
+<div class="bladi-header">
+    <!-- Announcement Bar -->
+    <div class="bladi-announcement-bar">
+        <div class="content">
+            <span style="font-size: 18px;">👍</span>
+            <span style="color:white">Bezoek onze showroom op de Boomsesteenweg 947 in Antwerpen - België / Dagelijks geopend van 10 tot 17 uur.</span>
+        </div>
+        <button class="close-btn" onclick="this.parentElement.style.display='none'">✕</button>
+    </div>
+
+    <!-- Main Header -->
+    <header class="bladi-main-header">
+        <div class="bladi-logo-container">
+            <img src="https://123tex.eu/wp-content/uploads/2026/02/441e0523-d5a4-47f7-bfcb-ed3670f11bb3.svg" alt="BLADI" class="bladi-logo">
+        </div>
+
+        <div class="bladi-search-container">
+            <div class="bladi-search-box">
+                <input type="text" placeholder="Zoekopdracht">
+                <button class="bladi-voice-search-btn" aria-label="Voice search">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
+                </button>
+                <button class="bladi-search-btn" aria-label="Search">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="bladi-header-actions">
+            <button class="bladi-language-selector">
+                <svg class="bladi-flag" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="900" height="200" fill="#AE1C28"/>
+                    <rect y="200" width="900" height="200" fill="#FFF"/>
+                    <rect y="400" width="900" height="200" fill="#21468B"/>
+                </svg>
+                <span>NL</span>
+                <span style="font-size: 10px;">▼</span>
+            </button>
+            <button class="bladi-icon-btn" aria-label="Account">👤</button>
+            <button class="bladi-icon-btn" aria-label="Cart">🛒</button>
+        </div>
+    </header>
+
+    <!-- Navigation Menu -->
+    <nav class="bladi-navigation">
+        <button class="bladi-hamburger-menu" aria-label="Toggle menu">
+            ☰
+        </button>
+        <ul class="bladi-nav-menu">
+            <li><a href="https://123tex.eu">Homepage</a></li>
+            
+            <li class="bladi-dropdown">
+                <a href="https://123tex.eu/meubelstoffen-2/">Meubelstoffen</a>
+                <ul class="bladi-submenu">
+                    <li><a href="https://123tex.eu/kunstleer-2/">Kunstleer</a></li>
+                    <li><a href="#">Fluweel</a></li>
+                    <li><a href="#">Gemêleerd</a></li>
+                    <li><a href="#">Chenille</a></li>
+                    <li><a href="#">Bouclé meubelstof</a></li>
+                    <li><a href="#">Geweven meubelstof</a></li>
+                    <li><a href="#">Gewatteerd meubelstoffen</a></li>
+                    <li><a href="#">Gobelin</a></li>
+                    <li><a href="#">Stalenboeken / stalenhangers</a></li>
+                </ul>
+            </li>
+            
+            <li class="bladi-dropdown">
+                <a href="#">Fournituren</a>
+                <ul class="bladi-submenu">
+                    <li><a href="#">Naaigaren</a></li>
+                    <li><a href="#">Naaimachine naalden</a></li>
+                    <li><a href="#">Scharen</a></li>
+                    <li><a href="#">Elastiek</a></li>
+                    <li><a href="#">Ritsen</a></li>
+                    <li><a href="#">Knopen & Drukknopen</a></li>
+                    <li><a href="#">Vlieseline</a></li>
+                    <li><a href="#">Naainaalden & Spelden</a></li>
+                    <li><a href="#">Overige Fournituren</a></li>
+                    <li><a href="#">Haken</a></li>
+                </ul>
+            </li>
+            
+            <li class="bladi-dropdown">
+                <a href="https://123tex.eu/stoffeerartikelen/">Stoffeerartikelen</a>
+                <ul class="bladi-submenu">
+                     <li><a href="#">Lijm / lijmspray's</a></li>
+                    <li><a href="#">Doeken / Fiberfill</a></li>
+                    <li><a href="#">Nietpistool & Nietjes</a></li>
+                    <li><a href="#">Bies en touw</a></li>
+                    <li><a href="#">Meubeldoppen</a></li>
+                    <li><a href="#">Lijmpistool</a></li>
+                    <li><a href="#">Messen</a></li>
+                    <li><a href="#">Vilt</a></li>
+                    <li><a href="#">Knopen</a></li>
+                    <li><a href="#">Klittenband</a></li>
+                    <li><a href="#">Siernagels</a></li>
+                    <li><a href="#">Verpakkingsmateriaal</a></li>
+                    <li><a href="#">Verschillende</a></li>
+                    
+                </ul>
+            </li>
+            
+            <li class="bladi-dropdown">
+                <a href="#">IJzerwaren</a>
+                <ul class="bladi-submenu">
+                    <li><a href="#">Meubelpoten</a></li>
+                    <li><a href="#">Elementverbinders</a></li>
+                    <li><a href="#">Rampamoeren</a></li>
+                    <li><a href="#">Bits en Bithouders</a></li>
+                    <li><a href="#">Schroeven / vijzen</a></li>
+                    <li><a href="#">Schroeven op Strip</a></li>
+                    <li><a href="#">Pluggen</a></li>
+                    
+                </ul>
+            </li>
+            
+            <li><a href="#">Onderhoud</a></li>
+            <li><a href="#">Stoffengroothandel</a></li>
+            <li><a href="#">Blog's</a></li>
+        </ul>
+    </nav>
+</div>
+
+<script>
+    (function() {
+        // Close announcement bar
+        const closeBtn = document.querySelector('.bladi-announcement-bar .close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                document.querySelector('.bladi-announcement-bar').style.display = 'none';
+            });
+        }
+
+        // Hamburger menu toggle
+        const hamburger = document.querySelector('.bladi-hamburger-menu');
+        const navMenu = document.querySelector('.bladi-nav-menu');
+
+        if (hamburger && navMenu) {
+            hamburger.addEventListener('click', function() {
+                navMenu.classList.toggle('active');
+                // Change icon when menu is open
+                this.textContent = navMenu.classList.contains('active') ? '✕' : '☰';
+            });
+        }
+
+        // Mobile dropdown toggle
+        const dropdowns = document.querySelectorAll('.bladi-dropdown');
+        
+        dropdowns.forEach(dropdown => {
+            dropdown.addEventListener('click', function(e) {
+                // Only toggle on mobile
+                if (window.innerWidth <= 768) {
+                    // Prevent default link behavior
+                    const link = this.querySelector('a');
+                    if (e.target === link) {
+                        e.preventDefault();
+                    }
+                    
+                    // Toggle submenu
+                    const submenu = this.querySelector('.bladi-submenu');
+                    submenu.classList.toggle('active');
+                    
+                    // Close other submenus
+                    dropdowns.forEach(otherDropdown => {
+                        if (otherDropdown !== dropdown) {
+                            otherDropdown.querySelector('.bladi-submenu').classList.remove('active');
+                        }
+                    });
+                }
+            });
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.bladi-navigation')) {
+                if (navMenu) {
+                    navMenu.classList.remove('active');
+                }
+                if (hamburger) {
+                    hamburger.textContent = '☰';
+                }
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                if (navMenu) {
+                    navMenu.classList.remove('active');
+                }
+                if (hamburger) {
+                    hamburger.textContent = '☰';
+                }
+                // Remove active class from all submenus
+                document.querySelectorAll('.bladi-submenu').forEach(submenu => {
+                    submenu.classList.remove('active');
+                });
+            }
+        });
+    })();
+</script>
