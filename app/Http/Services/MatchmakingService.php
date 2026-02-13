@@ -283,11 +283,6 @@ class MatchmakingService
 
         $startedAt = Carbon::parse($match->started_at);
         $secondsPassed = $startedAt->diffInSeconds(now());
-        if ($startedAt->isPast()) {
-            if ($secondsPassed >= 10) {
-                $match->update(['status' => 'cancelled']);
-            }
-        }
         if($playerMatch->status == "ready"){             
             if($readyPlayers > 1 || $eliminatedPlayers >= 1){
                 if ($user->whipple_point >= 40) {
@@ -326,6 +321,11 @@ class MatchmakingService
                     $playerMatch->update(['status' => "eliminated"]);
                 }
             }
+            if ($startedAt->isPast()) {
+                if ($secondsPassed >= 15 && $eliminatedPlayers == 0) {
+                    $match->update(['status' => 'cancelled']);
+                }
+            }
         }
 
         // Add demo user only when conditions are met
@@ -354,9 +354,9 @@ class MatchmakingService
             }
         }
 
-        if ($shouldAddDemo && $match->game->key !== 'tap_rush') {
-            $match->update(['status' => 'cancelled']);
-        }
+        // if ($shouldAddDemo && $match->game->key !== 'tap_rush') {
+        //     $match->update(['status' => 'cancelled']);
+        // }
 
         // Start game automatically once 2 ready players exist
         if ($match->players->where('status', 'eliminated')->count() >= 2) {
@@ -416,8 +416,8 @@ class MatchmakingService
         if ($user->referral_code != "demo") {
             $afterBal = $user->wallet_balance += $winnings;
             Transaction::create([
-                'user_id' => Auth::user()->id,
-                'type' => 'game',
+                'user_id' => $user->id,
+                'type' => 'win',
                 'amount' => $winnings,
                 'status' => 'completed',
                 'ref' => $ref ?? uniqid(),
