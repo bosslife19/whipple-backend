@@ -254,7 +254,7 @@ class SkillgameController extends Controller
                 "score" => $request->score,
                 "has_submitted" => true,
             ]);
-        }else{
+        } else {
             $playerMatch->update([
                 "status" => "finished",
                 "time" => $request->time,
@@ -287,23 +287,49 @@ class SkillgameController extends Controller
 
         $unfinishedPlayers = $match->players->where('status', '!=', 'finished')->count();
         // if ($elapsed <= 10) {
-        if ($unfinishedPlayers == 0 || $secondsPassed >= 5) {
-            // Rank and finalize
-            $this->finalizeMatch($match);
+        // if ($unfinishedPlayers == 0 || $secondsPassed >= 5) {
+        //     // Rank and finalize
+        //     $this->finalizeMatch($match);
+
+        //     return response()->json([
+        //         'status' => 'finished',
+        //         'message' => 'Match finalized after 10 seconds',
+        //         'results' => $this->getMatchResults($match),
+        //         'user_winning' => $match->players->where('user_id', Auth::user()->id)->first()->winnings,
+        //         'user_balance' => Auth::user()->wallet_balance
+        //     ]);
+        // } else {
+        //     SkillGameMatchPlayers::where('is_demo', 1)->where('match_id', $matchId)->update([
+        //         "status" => "finished",
+        //         "has_submitted" => true,
+        //     ]);
+        // }
+
+        if ($unfinishedPlayers == 0 || $secondsPassed >= 15) {
+
+            $updated = SkillgameMatch::where('id', $matchId)
+                ->where('status', '!=', 'finished')
+                ->update([
+                    'status' => 'finished'
+                ]);
+
+            // Only the FIRST request will update row (returns 1)
+            if ($updated) {
+                $this->finalizeMatch($match);
+            }
+
+            $match->refresh();
 
             return response()->json([
                 'status' => 'finished',
-                'message' => 'Match finalized after 10 seconds',
                 'results' => $this->getMatchResults($match),
-                'user_winning' => $match->players->where('user_id', Auth::user()->id)->first()->winnings,
+                'user_winning' => $match->players
+                    ->where('user_id', Auth::id())
+                    ->first()->winnings ?? 0,
                 'user_balance' => Auth::user()->wallet_balance
             ]);
-        } else {
-            SkillGameMatchPlayers::where('is_demo', 1)->where('match_id', $matchId)->update([
-                "status" => "finished",
-                "has_submitted" => true,
-            ]);
         }
+
 
         // Still waiting
         return response()->json([
