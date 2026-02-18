@@ -305,7 +305,7 @@ class SkillgameController extends Controller
         //     ]);
         // }
 
-        if ($unfinishedPlayers == 0 || $secondsPassed >= 15) {
+        if ($unfinishedPlayers == 0 || $secondsPassed >= 30) {
 
             $updated = SkillgameMatch::where('id', $matchId)
                 ->where('status', '!=', 'finished')
