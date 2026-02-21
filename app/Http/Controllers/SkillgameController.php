@@ -361,9 +361,10 @@ class SkillgameController extends Controller
         $match->status = 'finished';
         $match->finished_at = Carbon::now();
         $match->save();
+        $match->refresh();
 
         // Award logic — optional
-        $this->assignWinnings($players, $match);
+        $this->assignWinnings($match);
     }
 
     /**
@@ -390,8 +391,12 @@ class SkillgameController extends Controller
     /**
      * Assign winnings (example rule)
      */
-    private function assignWinnings($players, $match)
+    private function assignWinnings($match)
     {
+        $match->refresh();
+        $players = SkillGameMatchPlayers::where('match_id', $match->id)
+            ->orderByDesc('score')
+            ->get();
         $totalPot = $match->pot_amount; // Example stake * 4 players
         foreach ($players as $p) {
             if ($match->game->key == "defuse_x") {
@@ -413,6 +418,7 @@ class SkillgameController extends Controller
                 }
             }
             $p->save();
+            $p->refresh();
         }
     }
 
