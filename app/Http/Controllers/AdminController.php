@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Game;
-use App\Models\User;
 use App\Models\Forecast;
-use App\Models\Transaction;
-use Illuminate\Http\Request;
 use App\Models\ForecastMatch;
 use App\Models\ForecastRound;
+use App\Models\Game;
+use App\Models\Transaction;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
@@ -235,8 +236,11 @@ class AdminController extends Controller
                     $data['result_b'] = $data['score_b'] > $data['score_a'] ? 'win' : ($data['score_b'] == $data['score_a'] ? 'draw' : 'loss');
                 }
             }
-
-            ForecastMatch::create($data);
+            $data['kickoff_time'] = Carbon::parse($data['kickoff_time']);
+            // return $data;
+            ForecastMatch::updateOrCreate([
+                'id' => $data['id']
+            ], $data);
             $count++;
         }
         fclose($handle);
@@ -309,7 +313,7 @@ class AdminController extends Controller
     {
         $user = User::find($userId);
 
-        $afterBal = $user->whipple_points += $points;
+        $afterBal = $user->whipple_point += $points;
         Transaction::create([
             'user_id' => $user->id,
             'type' => 'win',
@@ -317,11 +321,11 @@ class AdminController extends Controller
             'status' => 'completed',
             'ref' => $ref ?? uniqid(),
             'description' => 'Forecast round - ' . $round->label,
-            'balance_before' => $user->whipple_points,
-            'balance_after' => $afterBal
+            'point_before' => $user->whipple_point,
+            'point_after' => $afterBal
         ]);
 
-        $user->update(['whipple_points' => $afterBal]);
+        $user->update(['whipple_point' => $afterBal]);
     }
 
 }

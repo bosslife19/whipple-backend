@@ -21,7 +21,8 @@ return new class extends Migration
             $table->integer('score_a')->nullable();
             $table->integer('score_b')->nullable();
             $table->boolean('is_correct')->default(false);
-            $table->enum('status', ['pending', 'scored'])->default('pending'); 
+            $table->enum('status', ['pending', 'scored'])->default('pending');
+            $table->enum('type', ['general', 'specific'])->default('general'); 
             $table->timestamps();
         });
     }
