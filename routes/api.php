@@ -101,10 +101,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('forecast')->group(function () {
 
-        Route::get('/{type}', [ForecastController::class, 'list']);
+        Route::get('type/{type?}', [ForecastController::class, 'list']);
         Route::post('/submit', [ForecastController::class, 'submit']);
 
-        Route::get('/my-forecasts', [ForecastController::class, 'myForecasts']);
+        Route::get('/myForecasts', [ForecastController::class, 'myForecasts']);
     });
 
 });

@@ -381,7 +381,7 @@
                         <div class="flex text-sm text-slate-600">
                             <label class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
                                 <span id="file-name-display">Upload a file</span>
-                                <input id="file-upload" name="file" type="file" class="sr-only" required accept=".csv" onchange="document.getElementById('file-name-display').innerText = this.files[0].name">
+                                <input id="file-upload" name="file" type="file" class="sr-only" required accept=".csv,.xlsx,.xls" onchange="document.getElementById('file-name-display').innerText = this.files[0].name">
                             </label>
                             <p class="pl-1" id="drag-drop-text">or drag and drop</p>
                         </div>
