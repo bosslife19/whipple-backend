@@ -296,7 +296,7 @@ class MatchmakingService
                         'status' => 'completed',
                         'ref' => uniqid(),
                         'description' => 'Skill game - ' . $matchgame->game->name,
-                        'point_before' => $user->wallet_balance,
+                        'point_before' => $user->whipple_point,
                         'point_after' => $afterPoint
                     ]);
 

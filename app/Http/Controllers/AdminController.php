@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Game;
-use App\Models\User;
 use App\Models\Forecast;
-use App\Models\Transaction;
-use Illuminate\Http\Request;
 use App\Models\ForecastMatch;
 use App\Models\ForecastRound;
+use App\Models\Game;
+use App\Models\Transaction;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {
@@ -41,7 +42,7 @@ class AdminController extends Controller
         }
 
         $matches = $query->latest()->get();
-        
+
         $metrics = [
             'all' => [
                 'draft' => (clone $metricsQuery)->where('status', 'draft')->count(),
@@ -76,9 +77,11 @@ class AdminController extends Controller
             'status' => 'required|in:draft,active,ended',
             'score_a' => 'nullable|integer',
             'score_b' => 'nullable|integer',
+            'result_a' => 'nullable|in:win,draw,loss',
+            'result_b' => 'nullable|in:win,draw,loss',
         ]);
 
-        if ($data['status'] === 'ended' && isset($data['score_a']) && isset($data['score_b'])) {
+        if ($data['status'] === 'ended' && $data['type'] === 'specific' && isset($data['score_a']) && isset($data['score_b'])) {
             $data['result_a'] = $data['score_a'] > $data['score_b'] ? 'win' : ($data['score_a'] == $data['score_b'] ? 'draw' : 'loss');
             $data['result_b'] = $data['score_b'] > $data['score_a'] ? 'win' : ($data['score_b'] == $data['score_a'] ? 'draw' : 'loss');
         }
@@ -91,7 +94,7 @@ class AdminController extends Controller
     public function updateForecastMatch(Request $request, $id)
     {
         $match = ForecastMatch::findOrFail($id);
-        
+
         $data = $request->validate([
             'team_name_a' => 'required|string',
             'team_name_b' => 'required|string',
@@ -102,9 +105,11 @@ class AdminController extends Controller
             'status' => 'required|in:draft,active,ended',
             'score_a' => 'nullable|integer',
             'score_b' => 'nullable|integer',
+            'result_a' => 'nullable|in:win,draw,loss',
+            'result_b' => 'nullable|in:win,draw,loss',
         ]);
 
-        if ($data['status'] === 'ended' && isset($data['score_a']) && isset($data['score_b'])) {
+        if ($data['status'] === 'ended' && $data['type'] === 'specific' && isset($data['score_a']) && isset($data['score_b'])) {
             $data['result_a'] = $data['score_a'] > $data['score_b'] ? 'win' : ($data['score_a'] == $data['score_b'] ? 'draw' : 'loss');
             $data['result_b'] = $data['score_b'] > $data['score_a'] ? 'win' : ($data['score_b'] == $data['score_a'] ? 'draw' : 'loss');
         }
@@ -113,7 +118,8 @@ class AdminController extends Controller
 
         // If it's ended, we should process rewards
         if ($match->status === 'ended') {
-            $this->processForecastResults($match);
+            $this->processForecastResults($match->refresh());
+            $this->awardPoints();
         }
 
         return back()->with('status', 'Match updated successfully!');
@@ -121,7 +127,7 @@ class AdminController extends Controller
 
     private function processForecastResults($match)
     {
-        $forecasts = Forecast::where('match_id', $match->id)->get();
+        $forecasts = Forecast::where('match_id', $match->id)->where('status', 'pending')->get();
 
         foreach ($forecasts as $f) {
             $correct = false;
@@ -134,10 +140,8 @@ class AdminController extends Controller
                     $f->score_b == $match->score_b;
             }
 
-            $f->update(['is_correct' => $correct]);
+            $f->update(['is_correct' => $correct, 'status' => 'scored']);
         }
-
-        $this->awardPoints($match->forecast_round_id);
     }
 
 
@@ -156,7 +160,7 @@ class AdminController extends Controller
 
         $matches = $query->latest()->get();
         $filename = "forecast_matches_" . date('Ymd_His') . ".csv";
-        
+
         $headers = [
             "Content-type"        => "text/csv",
             "Content-Disposition" => "attachment; filename=$filename",
@@ -167,7 +171,7 @@ class AdminController extends Controller
 
         $columns = ['team_logo_a', 'team_logo_b', 'team_name_a', 'team_name_b', 'kickoff_time', 'type', 'result_a', 'result_b', 'score_a', 'score_b', 'status', 'id'];
 
-        $callback = function() use($matches, $columns) {
+        $callback = function () use ($matches, $columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
@@ -198,7 +202,7 @@ class AdminController extends Controller
 
         $columns = ['team_logo_a', 'team_logo_b', 'team_name_a', 'team_name_b', 'kickoff_time', 'type', 'result_a', 'result_b', 'score_a', 'score_b', 'status'];
 
-        $callback = function() use($columns) {
+        $callback = function () use ($columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
             fclose($file);
@@ -217,11 +221,11 @@ class AdminController extends Controller
         $file = $request->file('file');
         $handle = fopen($file->getRealPath(), "r");
         $header = fgetcsv($handle);
-        
+
         $count = 0;
         while (($row = fgetcsv($handle)) !== FALSE) {
             $data = array_combine($header, $row);
-            
+
             if ($request->filled('status_override')) {
                 $data['status'] = $request->status_override;
             }
@@ -235,8 +239,40 @@ class AdminController extends Controller
                     $data['result_b'] = $data['score_b'] > $data['score_a'] ? 'win' : ($data['score_b'] == $data['score_a'] ? 'draw' : 'loss');
                 }
             }
+            $data['kickoff_time'] = Carbon::parse($data['kickoff_time']);
 
-            ForecastMatch::create($data);
+            $match = ForecastMatch::find($data['id']);
+            if ($match) {
+                $match->update([
+                    'team_logo_a' => $data['team_logo_a'] !== "" ? $data['team_logo_a'] : null,
+                    'team_logo_b' => $data['team_logo_b'] !== "" ? $data['team_logo_b'] : null,
+                    'team_name_a' => $data['team_name_a'] !== "" ? $data['team_name_a'] : null,
+                    'team_name_b' => $data['team_name_b'] !== "" ? $data['team_name_b'] : null,
+                    'kickoff_time' => $data['kickoff_time'] !== "" ? $data['kickoff_time'] : null,
+                    'type' => $data['type'],
+                    'result_a' => $data['result_a'] !== "" ? $data['result_a'] : null,
+                    'result_b' => $data['result_b'] !== "" ? $data['result_b'] : null,
+                    'score_a' => $data['score_a'] !== "" ? $data['score_a'] : null,
+                    'score_b' => $data['score_b'] !== "" ? $data['score_b'] : null,
+                    'status' => $data['status'] !== "" ? $data['status'] : 'draft',
+                ]);
+                $this->processForecastResults($match->refresh());
+            } else {
+                ForecastMatch::create([
+                    'team_logo_a' => $data['team_logo_a'] !== "" ? $data['team_logo_a'] : null,
+                    'team_logo_b' => $data['team_logo_b'] !== "" ? $data['team_logo_b'] : null,
+                    'team_name_a' => $data['team_name_a'] !== "" ? $data['team_name_a'] : null,
+                    'team_name_b' => $data['team_name_b'] !== "" ? $data['team_name_b'] : null,
+                    'kickoff_time' => $data['kickoff_time'] ?? null,
+                    'type' => $data['type'] !== "" ? $data['type'] : null,
+                    'result_a' => $data['result_a'] !== "" ? $data['result_a'] : null,
+                    'result_b' => $data['result_b'] !== "" ? $data['result_b'] : null,
+                    'score_a' => $data['score_a'] !== "" ? $data['score_a'] : null,
+                    'score_b' => $data['score_b'] !== "" ? $data['score_b'] : null,
+                    'status' => $data['status'] !== "" ? $data['status'] : 'draft',
+                ]);
+            }
+
             $count++;
         }
         fclose($handle);
@@ -251,12 +287,12 @@ class AdminController extends Controller
         $match = ForecastMatch::findOrFail($request->match_id);
 
         $match->update([
-            'result'=>$request->result,
-            'score_a'=>$request->score_a,
-            'score_b'=>$request->score_b,
+            'result' => $request->result,
+            'score_a' => $request->score_a,
+            'score_b' => $request->score_b,
         ]);
 
-        $forecasts = Forecast::where('match_id',$match->id)->get();
+        $forecasts = Forecast::where('match_id', $match->id)->get();
 
         foreach ($forecasts as $f) {
             $correct = false;
@@ -269,7 +305,7 @@ class AdminController extends Controller
                     $f->score_b == $match->score_b;
             }
 
-            $f->update(['is_correct'=>$correct, 'status'=>'scored']);
+            $f->update(['is_correct' => $correct, 'status' => 'scored']);
         }
 
         $this->awardPoints();
@@ -282,25 +318,25 @@ class AdminController extends Controller
             $generalForecasts = Forecast::where('forecast_round_id', $round->id)->where('type', 'general')->get();
             $generalForecastsScored = Forecast::where('forecast_round_id', $round->id)->where('type', 'general')->where('status', 'scored')->get();
             $generalForecastsCorrect = Forecast::where('forecast_round_id', $round->id)->where('type', 'general')->where('is_correct', true)->get();
-            if($generalForecasts->count() === $generalForecastsScored->count() ){
-                if($generalForecasts->count() === $generalForecastsCorrect->count()){
+            if ($generalForecasts->count() === $generalForecastsScored->count() && $generalForecasts->count() > 0) {
+                if ($generalForecasts->count() === $generalForecastsCorrect->count() && $generalForecasts->count() > 0) {
                     $point = 20 * $generalForecasts->count();
-                    $round->update(['winnings'=>$point]);
+                    $round->update(['winnings' => $point]);
                     $this->transactionRecord($round->user_id, $point, $round);
                 }
 
-                $round->update(['status'=>'closed']);
+                $round->update(['status' => 'closed']);
             }
 
 
             $specificForecasts = Forecast::where('forecast_round_id', $round->id)->where('type', 'specific')->get();
             $specificForecastsScored = Forecast::where('forecast_round_id', $round->id)->where('type', 'specific')->where('status', 'scored')->get();
             $specificForecastsCorrect = Forecast::where('forecast_round_id', $round->id)->where('type', 'specific')->where('is_correct', true)->get();
-            if($specificForecasts->count() === $specificForecastsScored->count() ){
+            if ($specificForecasts->count() === $specificForecastsScored->count() && $specificForecasts->count() > 0) {
                 $point = 80 * $specificForecastsCorrect->count();
-                $round->update(['winnings'=>$point]);
+                $round->update(['winnings' => $point]);
                 $this->transactionRecord($round->user_id, $point, $round);
-                $round->update(['status'=>'closed']);
+                $round->update(['status' => 'closed']);
             }
         }
     }
@@ -309,7 +345,7 @@ class AdminController extends Controller
     {
         $user = User::find($userId);
 
-        $afterBal = $user->whipple_points += $points;
+        $afterBal = $user->whipple_point += $points;
         Transaction::create([
             'user_id' => $user->id,
             'type' => 'win',
@@ -317,11 +353,10 @@ class AdminController extends Controller
             'status' => 'completed',
             'ref' => $ref ?? uniqid(),
             'description' => 'Forecast round - ' . $round->label,
-            'balance_before' => $user->whipple_points,
-            'balance_after' => $afterBal
+            'point_before' => $user->whipple_point,
+            'point_after' => $afterBal
         ]);
 
-        $user->update(['whipple_points' => $afterBal]);
+        $user->update(['whipple_point' => $afterBal]);
     }
-
 }

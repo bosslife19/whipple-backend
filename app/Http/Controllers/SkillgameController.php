@@ -223,6 +223,7 @@ class SkillgameController extends Controller
         $players = SkillGameMatchPlayers::with('user')
             ->where('match_id', $match->id)
             ->orderByDesc('score')
+            ->orderBy('time')
             ->get();
 
         // Assign rank
@@ -353,6 +354,7 @@ class SkillgameController extends Controller
     {
         $players = SkillGameMatchPlayers::where('match_id', $match->id)
             ->orderByDesc('score')
+            ->orderBy('time')
             ->get();
 
         // Assign ranks and winnings
@@ -366,9 +368,10 @@ class SkillgameController extends Controller
         $match->status = 'finished';
         $match->finished_at = Carbon::now();
         $match->save();
+        $match->refresh();
 
         // Award logic — optional
-        $this->assignWinnings($players, $match);
+        $this->assignWinnings($match);
     }
 
     /**
@@ -395,8 +398,12 @@ class SkillgameController extends Controller
     /**
      * Assign winnings (example rule)
      */
-    private function assignWinnings($players, $match)
+    private function assignWinnings($match)
     {
+        $match->refresh();
+        $players = SkillGameMatchPlayers::where('match_id', $match->id)
+            ->orderByDesc('score')
+            ->get();
         $totalPot = $match->pot_amount; // Example stake * 4 players
         foreach ($players as $p) {
             if ($match->game->key == "defuse_x") {
@@ -407,10 +414,10 @@ class SkillgameController extends Controller
                     $p->winnings = 0;
                 }
             } else {
-                if ($p->rank == 1) {
+                if ($p->rank == 1 && $p->score > 0) {
                     $p->winnings = $totalPot * 0.75;
                     $this->matchService->gameWinnings($p, $match, $totalPot * 0.75);
-                } elseif ($p->rank == 2) {
+                } elseif ($p->rank == 2 && $p->score > 0) {
                     $p->winnings = $totalPot * 0.25;
                     $this->matchService->gameWinnings($p, $match, $totalPot * 0.25);
                 } else {
@@ -418,6 +425,7 @@ class SkillgameController extends Controller
                 }
             }
             $p->save();
+            $p->refresh();
         }
     }
 
