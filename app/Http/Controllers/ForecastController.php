@@ -15,14 +15,35 @@ class ForecastController extends Controller
 {
     public function list($type = null)
     {
-        if($type){
-            return ForecastMatch::where('type',$type)->where('status','active')
-            ->where('kickoff_time','>', now()->addMinutes(10))
-            ->get();
+        $userId = Auth::id();
+
+        // Use West African Time (e.g. Africa/Lagos) and only include
+        // matches whose kickoff_time is more than 10 minutes from "now"
+        $cutoff = now('Africa/Lagos')->addMinutes(10);
+
+        $query = ForecastMatch::where('status', 'active')
+            ->where('kickoff_time', '>', $cutoff);
+
+        if ($type) {
+            $query->where('type', $type);
         }
-        return ForecastMatch::where('status','active')
-            ->where('kickoff_time','>', now()->addMinutes(10))
-            ->get();
+
+        // Exclude matches the authenticated user has already forecasted
+        if ($userId) {
+            $forecastQuery = Forecast::where('user_id', $userId);
+
+            if ($type) {
+                $forecastQuery->where('type', $type);
+            }
+
+            $forecastedMatchIds = $forecastQuery->pluck('match_id')->toArray();
+
+            if (!empty($forecastedMatchIds)) {
+                $query->whereNotIn('id', $forecastedMatchIds);
+            }
+        }
+
+        return $query->get();
     }
 
     public function submit(Request $request)
@@ -35,26 +56,41 @@ class ForecastController extends Controller
 
         $user = User::find(Auth::user()->id);
 
-        if($request->status == "active"){
-            $forecastRound = ForecastRound::where('user_id',Auth::user()->id)->where('status','active')->orWhere('status', 'closed')->get();
-            if($forecastRound->count() > 0){
-                if ($user->wallet_balance < 500) {
+        if ($request->status === "active") {
+            $userId = Auth::id();
+            $today = now('Africa/Lagos')->toDateString();
+
+            // Check if the user has already created a forecast round
+            // of this type today (active or closed). If yes, charge.
+            $hasForecastTodayForType = ForecastRound::where('user_id', $userId)
+                ->where('type', $request->type)
+                ->whereDate('created_at', $today)
+                ->whereIn('status', ['active', 'closed'])
+                ->exists();
+
+            if ($hasForecastTodayForType) {
+                // Pricing per type: general => 500, specific => 1000
+                $amount = $request->type === 'specific' ? 1000 : 500;
+
+                if ($user->wallet_balance < $amount) {
                     return response()->json(['message' => 'Insufficient balance'], 422);
-                }else{
-                    $after = $user->wallet_balance - 500;
-                    Transaction::create([
-                        'user_id' => $user->id,
-                        'type' => 'game',
-                        'amount' => 500,
-                        'status' => 'completed',
-                        'ref' => uniqid(),
-                        'description' => 'Forecast game '. $request->type,
-                        'balance_before' => $user->wallet_balance,
-                        'balance_after' => $after
-                    ]);
-                    $user->update(['wallet_balance' => $after]);
-                }   
-            }            
+                }
+
+                $after = $user->wallet_balance - $amount;
+
+                Transaction::create([
+                    'user_id'        => $user->id,
+                    'type'           => 'game',
+                    'amount'         => $amount,
+                    'status'         => 'completed',
+                    'ref'            => uniqid(),
+                    'description'    => 'Forecast game ' . $request->type,
+                    'balance_before' => $user->wallet_balance,
+                    'balance_after'  => $after,
+                ]);
+
+                $user->update(['wallet_balance' => $after]);
+            }
         }
 
         return DB::transaction(function () use ($request) {
@@ -95,7 +131,8 @@ class ForecastController extends Controller
             $dataMatch = [];
             foreach ($match as $m) {
                 $dataMatch[] = [
-                    'id' => $m->id,
+                    'id_round' => $m->id,
+                    'id' => $m->match->id,
                     'team_logo_a' => $m->match->team_logo_a,
                     'team_name_a' => $m->match->team_name_a,
                     'match_result_a' => $m->match->result_a,

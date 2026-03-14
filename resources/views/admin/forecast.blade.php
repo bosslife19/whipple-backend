@@ -141,6 +141,7 @@
                     @forelse($matches as $match)
                         <tr class="hover:bg-slate-50/50 transition">
                             <td class="px-6 py-4">
+                                <h2 class="text-sm font-bold text-slate-900">{{ str_pad($match->id, 9, '0', STR_PAD_LEFT) }}</h2>
                                 <div class="flex items-center space-x-4">
                                     <div class="text-right">
                                         <p class="text-sm font-bold text-slate-900">{{ $match->team_name_a }}</p>
@@ -176,7 +177,7 @@
                             </td>
                             <td class="px-6 py-4 text-center">
                                 @if($match->status === 'ended')
-                                    <span class="text-sm font-black text-slate-800">{{ $match->score_a }} - {{ $match->score_b }}</span>
+                                    <span class="text-sm font-black text-slate-800">{{ $match->type === 'general' ? $match->result_a . ' - ' . $match->result_b : $match->score_a . ' - ' . $match->score_b }}</span>
                                 @else
                                     <span class="text-xs text-slate-300">TBD</span>
                                 @endif
@@ -243,7 +244,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1">GAME TYPE</label>
-                    <select name="type" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <select name="type" id="create_type" required class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                         <option value="general">General</option>
                         <option value="specific">Specific</option>
                     </select>
@@ -258,15 +259,47 @@
                 </div>
             </div>
 
-            <!-- Scores for Create (Hidden unless status is ended) -->
-            <div id="createEndedFields" class="grid grid-cols-2 gap-6 pt-4 border-t border-slate-50 hidden">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">FINAL SCORE A</label>
-                    <input type="number" name="score_a" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            <!-- Scores / Results for Create (Hidden unless status is ended) -->
+            <div id="createEndedFields" class="pt-4 border-t border-slate-50 hidden">
+                <!-- General type: results -->
+                <div id="createGeneralFields" class="grid grid-cols-2 gap-6 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">RESULT A</label>
+                        <select name="result_a" id="create_result_a" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">Select result</option>
+                            <option value="win">Win</option>
+                            <option value="draw">Draw</option>
+                            <option value="loss">Loss</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">RESULT B</label>
+                        <select name="result_b" id="create_result_b" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="">Select result</option>
+                            <option value="win">Win</option>
+                            <option value="draw">Draw</option>
+                            <option value="loss">Loss</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">FINAL SCORE B</label>
-                    <input type="number" name="score_b" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <!-- Specific type: exact scores -->
+                <div id="createSpecificFields" class="grid grid-cols-2 gap-6 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">FINAL SCORE A</label>
+                        <select name="score_a" id="create_score_a" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            @for ($i = 0; $i <= 20; $i++)
+                                <option value="{{ $i }}">{{ $i }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">FINAL SCORE B</label>
+                        <select name="score_b" id="create_score_b" class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            @for ($i = 0; $i <= 20; $i++)
+                                <option value="{{ $i }}">{{ $i }}</option>
+                            @endfor
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -340,14 +373,46 @@
             </div>
 
             <!-- Scores & Results (Visible only if status is ended) -->
-            <div id="endedFields" class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50 hidden">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">SCORE A</label>
-                    <input type="number" name="score_a" id="edit_score_a" class="w-full px-4 py-2 border border-slate-200 rounded-lg">
+            <div id="endedFields" class="pt-4 border-t border-slate-50 hidden">
+                <!-- General type: results -->
+                <div id="editGeneralFields" class="grid grid-cols-2 gap-4 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">RESULT A</label>
+                        <select name="result_a" id="edit_result_a" class="w-full px-4 py-2 border border-slate-200 rounded-lg">
+                            <option value="">Select result</option>
+                            <option value="win">Win</option>
+                            <option value="draw">Draw</option>
+                            <option value="loss">Loss</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">RESULT B</label>
+                        <select name="result_b" id="edit_result_b" class="w-full px-4 py-2 border border-slate-200 rounded-lg">
+                            <option value="">Select result</option>
+                            <option value="win">Win</option>
+                            <option value="draw">Draw</option>
+                            <option value="loss">Loss</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1">SCORE B</label>
-                    <input type="number" name="score_b" id="edit_score_b" class="w-full px-4 py-2 border border-slate-200 rounded-lg">
+                <!-- Specific type: exact scores -->
+                <div id="editSpecificFields" class="grid grid-cols-2 gap-4 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">SCORE A</label>
+                        <select name="score_a" id="edit_score_a" class="w-full px-4 py-2 border border-slate-200 rounded-lg">
+                            @for ($i = 0; $i <= 20; $i++)
+                                <option value="{{ $i }}">{{ $i }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-1">SCORE B</label>
+                        <select name="score_b" id="edit_score_b" class="w-full px-4 py-2 border border-slate-200 rounded-lg">
+                            @for ($i = 0; $i <= 20; $i++)
+                                <option value="{{ $i }}">{{ $i }}</option>
+                            @endfor
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -411,7 +476,6 @@
 </div>
 
 <script>
-
 function openModal(id) {
     document.getElementById(id).classList.remove('hidden');
     document.getElementById(id).classList.add('flex');
@@ -420,6 +484,76 @@ function openModal(id) {
 function closeModal(id) {
     document.getElementById(id).classList.add('hidden');
     document.getElementById(id).classList.remove('flex');
+}
+
+function syncGeneralResults(primarySelect, secondarySelect) {
+    const value = primarySelect.value;
+    if (!value) {
+        return;
+    }
+    if (value === 'draw') {
+        primarySelect.value = 'draw';
+        secondarySelect.value = 'draw';
+    } else if (value === 'win') {
+        secondarySelect.value = 'loss';
+    } else if (value === 'loss') {
+        secondarySelect.value = 'win';
+    }
+}
+
+function updateCreateEndedFields() {
+    const status = document.getElementById('create_status').value;
+    const typeSelect = document.getElementById('create_type');
+    const type = typeSelect ? typeSelect.value : null;
+
+    const endedWrapper = document.getElementById('createEndedFields');
+    const generalFields = document.getElementById('createGeneralFields');
+    const specificFields = document.getElementById('createSpecificFields');
+
+    if (status === 'ended') {
+        endedWrapper.classList.remove('hidden');
+        if (type === 'general') {
+            generalFields.classList.remove('hidden');
+            specificFields.classList.add('hidden');
+        } else if (type === 'specific') {
+            specificFields.classList.remove('hidden');
+            generalFields.classList.add('hidden');
+        } else {
+            generalFields.classList.add('hidden');
+            specificFields.classList.add('hidden');
+        }
+    } else {
+        endedWrapper.classList.add('hidden');
+        generalFields.classList.add('hidden');
+        specificFields.classList.add('hidden');
+    }
+}
+
+function updateEditEndedFields() {
+    const status = document.getElementById('edit_status').value;
+    const type = document.getElementById('edit_type').value;
+
+    const endedWrapper = document.getElementById('endedFields');
+    const generalFields = document.getElementById('editGeneralFields');
+    const specificFields = document.getElementById('editSpecificFields');
+
+    if (status === 'ended') {
+        endedWrapper.classList.remove('hidden');
+        if (type === 'general') {
+            generalFields.classList.remove('hidden');
+            specificFields.classList.add('hidden');
+        } else if (type === 'specific') {
+            specificFields.classList.remove('hidden');
+            generalFields.classList.add('hidden');
+        } else {
+            generalFields.classList.add('hidden');
+            specificFields.classList.add('hidden');
+        }
+    } else {
+        endedWrapper.classList.add('hidden');
+        generalFields.classList.add('hidden');
+        specificFields.classList.add('hidden');
+    }
 }
 
 function openEditModal(match) {
@@ -431,39 +565,83 @@ function openEditModal(match) {
     document.getElementById('edit_team_logo_a').value = match.team_logo_a;
     document.getElementById('edit_team_logo_b').value = match.team_logo_b;
     
-    // Format date for datetime-local
-    const date = new Date(match.kickoff_time);
-    const formattedDate = date.toISOString().slice(0, 16);
-    document.getElementById('edit_kickoff_time').value = formattedDate;
+    // Use the kickoff_time from DB without timezone shift
+    if (match.kickoff_time) {
+        // Expecting a format like "YYYY-MM-DD HH:MM:SS"
+        const raw = String(match.kickoff_time).replace(' ', 'T').slice(0, 16);
+        document.getElementById('edit_kickoff_time').value = raw;
+    }
     
     document.getElementById('edit_type').value = match.type;
     document.getElementById('edit_status').value = match.status;
-    
+
+    // Prefill fields based on type when ended
     if (match.status === 'ended') {
-        document.getElementById('endedFields').classList.remove('hidden');
-        document.getElementById('edit_score_a').value = match.score_a;
-        document.getElementById('edit_score_b').value = match.score_b;
-    } else {
-        document.getElementById('endedFields').classList.add('hidden');
+        if (match.type === 'general') {
+            if (match.result_a) {
+                document.getElementById('edit_result_a').value = match.result_a;
+            }
+            if (match.result_b) {
+                document.getElementById('edit_result_b').value = match.result_b;
+            }
+        } else if (match.type === 'specific') {
+            if (typeof match.score_a !== 'undefined' && match.score_a !== null) {
+                document.getElementById('edit_score_a').value = match.score_a;
+            }
+            if (typeof match.score_b !== 'undefined' && match.score_b !== null) {
+                document.getElementById('edit_score_b').value = match.score_b;
+            }
+        }
     }
 
-    document.getElementById('edit_status').addEventListener('change', function() {
-        if (this.value === 'ended') {
-            document.getElementById('endedFields').classList.remove('hidden');
-        } else {
-            document.getElementById('endedFields').classList.add('hidden');
-        }
-    });
-    
+    updateEditEndedFields();
     openModal('editMatchModal');
 }
 
-// Add event listener for create status
-document.getElementById('create_status').addEventListener('change', function() {
-    if (this.value === 'ended') {
-        document.getElementById('createEndedFields').classList.remove('hidden');
-    } else {
-        document.getElementById('createEndedFields').classList.add('hidden');
+document.addEventListener('DOMContentLoaded', function () {
+    // Create form: status & type change handlers
+    const createStatus = document.getElementById('create_status');
+    const createType = document.getElementById('create_type');
+
+    if (createStatus) {
+        createStatus.addEventListener('change', updateCreateEndedFields);
+    }
+    if (createType) {
+        createType.addEventListener('change', updateCreateEndedFields);
+    }
+
+    // Sync general results in create form
+    const createResultA = document.getElementById('create_result_a');
+    const createResultB = document.getElementById('create_result_b');
+    if (createResultA && createResultB) {
+        createResultA.addEventListener('change', function () {
+            syncGeneralResults(createResultA, createResultB);
+        });
+        createResultB.addEventListener('change', function () {
+            syncGeneralResults(createResultB, createResultA);
+        });
+    }
+
+    // Edit form: status & type change handlers
+    const editStatus = document.getElementById('edit_status');
+    const editType = document.getElementById('edit_type');
+    if (editStatus) {
+        editStatus.addEventListener('change', updateEditEndedFields);
+    }
+    if (editType) {
+        editType.addEventListener('change', updateEditEndedFields);
+    }
+
+    // Sync general results in edit form
+    const editResultA = document.getElementById('edit_result_a');
+    const editResultB = document.getElementById('edit_result_b');
+    if (editResultA && editResultB) {
+        editResultA.addEventListener('change', function () {
+            syncGeneralResults(editResultA, editResultB);
+        });
+        editResultB.addEventListener('change', function () {
+            syncGeneralResults(editResultB, editResultA);
+        });
     }
 });
 </script>
