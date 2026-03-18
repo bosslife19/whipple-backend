@@ -10,6 +10,6 @@ class ForecastMatch extends Model
 
     public function forecast()
     {
-        return $this->hasMany(Forecast::class, 'match_id')->withDefault();
+        return $this->hasMany(Forecast::class, 'match_id');
     }
 }
