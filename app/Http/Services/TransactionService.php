@@ -167,7 +167,7 @@ class TransactionService
             ]);
 
             $user->update(['wallet_balance' => $after]);
-            return [$trn, $tranAmount, $before, $beforePoint];
+            return [$trn, $tranAmount, $before, $beforePoint??$user->whipple_point];
         });
     }
 

@@ -10,390 +10,429 @@ use Illuminate\Support\Facades\DB;
 
 class GameController extends Controller
 {
-    public function createGame(Request $request){
+    public function createGame(Request $request)
+    {
         try {
-            $request->validate(['name'=>'required']);
+            $request->validate(['name' => 'required']);
 
-            if($request->name =='Lucky Number'){
-                
+            if ($request->name == 'Lucky Number') {
+
                 Game::create([
-                    'creator_id'=>$request->user()->id,
-                    'name'=>$request->name,
-                    'number_result'=>$request->result,
-                    'category'=>$request->category,
-                    'subcategory'=>$request->subcategory,
-                    'odds'=>$request->odds,
-                    'stake'=>$request->stake
+                    'creator_id' => $request->user()->id,
+                    'name' => $request->name,
+                    'number_result' => $request->result,
+                    'category' => $request->category,
+                    'subcategory' => $request->subcategory,
+                    'odds' => $request->odds,
+                    'stake' => $request->stake
 
                 ]);
 
                 $user = $request->user();
-                if($user->whipple_point>=80){
+                if ($user->whipple_point >= 80) {
                     $user->whipple_point = $user->whipple_point - 80;
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake));
                     $user->save();
-                    return response()->json(['status'=>true]);
+
+
+                    return response()->json(['status' => true]);
                 }
-                if($user->whipple_point >=40 &&$user->whipple_point<80){
-                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
-            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
-                return response()->json(['status'=>true], 200);
+                if ($user->whipple_point >= 40 && $user->whipple_point < 80) {
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25) - (intval($request->stake) * 0.25));
+                    $user->whipple_point = $user->whipple_point - 40;
+                    $user->save();
+                    return response()->json(['status' => true], 200);
                 }
 
-                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25));
                 $user->save();
 
 
-                return response()->json(['status'=>true], 200);
+                return response()->json(['status' => true], 200);
             }
 
-            if($request->name=="Flip The Coin"){
+            if ($request->name == "Flip The Coin") {
                 Game::create([
-                    'creator_id'=>$request->user()->id,
-                    'name'=>$request->name,
-                    'coin_toss'=>$request->result,
-                    
-                    'odds'=>$request->odds,
-                    'stake'=>$request->stake
-                ]);
-                                $user = $request->user();
- if($user->whipple_point>=80){
-                    $user->whipple_point = $user->whipple_point - 80;
-                    $user->save();
-                    return response()->json(['status'=>true]);
-                }
-                                 if($user->whipple_point >=40 &&$user->whipple_point<80){
-                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
-            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
-                return response()->json(['status'=>true], 200);
-                }
-                 $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
-                                $user->save();
-                return response()->json(['status'=>true]);
-            }
-            if($request->name =='Dice Roll'){
-                Game::create([
-                    'creator_id'=>$request->user()->id,
-                    'name'=>$request->name,
-                    'dice_result'=>$request->diceRolled,
-                    'stake'=>$request->stake,
-                    'odds'=>$request->odds,
-                    'dice_type'=>$request->diceType
-                ]);
-                                $user = $request->user();
-                                  if($user->whipple_point>=80){
-                    $user->whipple_point = $user->whipple_point - 80;
-                    $user->save();
-                    return response()->json(['status'=>true]);
-                }
-                                 if($user->whipple_point >=40 &&$user->whipple_point<80){
-                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
-            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
-                return response()->json(['status'=>true], 200);
-                }
- $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
-                                $user->save();
-                return response()->json(['status'=>true]);
-            }
-            if($request->name =="Color Roulette"){
-                Game::create([
-                    'creator_id'=>$request->user()->id,
-                    'name'=>$request->name,
-                    'spin_wheel_result'=>$request->colors,
-                    'odds'=>$request->odds,
-                    'stake'=>$request->stake
-                ]);
-                 $user = $request->user();
-                   if($user->whipple_point>=80){
-                    $user->whipple_point = $user->whipple_point - 80;
-                    $user->save();
-                    return response()->json(['status'=>true]);
-                }
-                  if($user->whipple_point >=40 &&$user->whipple_point<80){
-                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
-            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
-                return response()->json(['status'=>true], 200);
-                }
-                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
-                                $user->save();
-                return response()->json(['status'=>true], 200);
-            }
-            if($request->name =="Color Roulette2"){
-                Game::create([
-                    'creator_id'=>$request->user()->id,
-                    'name'=>$request->name,
-                    'spin_wheel_result'=>$request->colorSpun,
-                    'stake'=>$request->stake,
-                    'odds'=>$request->odds
-                ]);
-                 $user = $request->user();
-                  if($user->whipple_point>=80){
-                    $user->whipple_point = $user->whipple_point - 80;
-                    $user->save();
-                    return response()->json(['status'=>true]);
-                }
-                  if($user->whipple_point >=40 &&$user->whipple_point<80){
-                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
-            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
-                return response()->json(['status'=>true], 200);
-                }
- $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
-                                $user->save();
-                return response()->json(['status'=>true], 200);
-            }
-            if($request->name =="One Number Spin"){
-                 Game::create([
-                    'creator_id'=>$request->user()->id,
-                    'name'=>$request->name,
-                    'number_wheel_result'=>$request->winningNumber,
-                    'stake'=>$request->stake,
-                    'odds'=>$request->odds
-                ]);
-                 $user = $request->user();
-                  if($user->whipple_point>=80){
-                    $user->whipple_point = $user->whipple_point - 80;
-                    $user->save();
-                    return response()->json(['status'=>true]);
-                }
-                  if($user->whipple_point >=40 &&$user->whipple_point<80){
-                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
-            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
-                return response()->json(['status'=>true], 200);
-                }
-                 $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
-                                $user->save();
+                    'creator_id' => $request->user()->id,
+                    'name' => $request->name,
+                    'coin_toss' => $request->result,
 
-                return response()->json(['status'=>true]);
-            }
-            if($request->name =='Wheel Spin'){
-
-                Game::create([
-                    'creator_id'=>$request->user()->id,
-                    'name'=>$request->name,
-                    'wheel_spin_results'=>$request->numbers,
-                    'stake'=>$request->stake,
-                    'odds'=>$request->odds
+                    'odds' => $request->odds,
+                    'stake' => $request->stake
                 ]);
-                 $user = $request->user();
-                   if($user->whipple_point>=80){
+                $user = $request->user();
+                if ($user->whipple_point >= 80) {
                     $user->whipple_point = $user->whipple_point - 80;
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake));
                     $user->save();
-                    return response()->json(['status'=>true]);
-                }
-                  if($user->whipple_point >=40 &&$user->whipple_point<80){
-                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
-            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
-                return response()->json(['status'=>true], 200);
-                }
- $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
-                                $user->save();
-                return response()->json(['status'=>true], 200);
-            }
-            if($request->name =='Goal Challenge'){
-                Game::create([
-                    'creator_id'=>$request->user()->id,
-                    'name'=>$request->name,
-                    'ball_direction'=>$request->direction,
-                    'stake'=>$request->stake,
-                    'odds'=>$request->odds
-                ]);
-                 $user = $request->user();
-                   if($user->whipple_point>=80){
-                    $user->whipple_point = $user->whipple_point - 80;
-                    $user->save();
-                    return response()->json(['status'=>true]);
-                }
-                  if($user->whipple_point >=40 &&$user->whipple_point<80){
-                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
-            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
-                return response()->json(['status'=>true], 200);
-                }
-                 $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
-                                $user->save();
-                return response()->json(['status'=>true], 200);
-            }
-
-           if($request->name =='Mystery Box Game'){
-                Game::create([
-                    'creator_id'=>$request->user()->id,
-                    'name'=>$request->name,
-                    'winning_box'=>$request->boxSelected,
-                    'stake'=>$request->stake,
-                    'odds'=>$request->odds
-                ]);
-                 $user = $request->user();
-                   if($user->whipple_point>=80){
-                    $user->whipple_point = $user->whipple_point - 80;
-                    $user->save();
-                    return response()->json(['status'=>true]);
-                }
-                  if($user->whipple_point >=40 &&$user->whipple_point<80){
-                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
-            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
-                return response()->json(['status'=>true], 200);
-                }
- $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
-                                $user->save();
-                return response()->json(['status'=>true], 200);
-            }
-             if($request->name =='Spin The Bottle'){
-                Game::create([
-                    'creator_id'=>$request->user()->id,
-                    'name'=>$request->name,
-                    'spin_bottle'=>$request->spinDirection,
-                    'stake'=>$request->stake,
-                    'odds'=>$request->odds
-                ]);
-                 $user = $request->user();
-                  if($user->whipple_point>=80){
-                    $user->whipple_point = $user->whipple_point - 80;
-                    $user->save();
-                    return response()->json(['status'=>true]);
-                }
-                  if($user->whipple_point >=40 &&$user->whipple_point<80){
-                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25)-(intval($request->stake)*0.25));
-            $user->whipple_point = $user->whipple_point - 40;    $user->save(); 
-                return response()->json(['status'=>true], 200);
-                }
-               $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake)*0.25));
-                                $user->save();
-                return response()->json(['status'=>true], 200);
-            }
 
 
+                    return response()->json(['status' => true]);
+                }
+                if ($user->whipple_point >= 40 && $user->whipple_point < 80) {
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25) - (intval($request->stake) * 0.25));
+                    $user->whipple_point = $user->whipple_point - 40;
+                    $user->save();
+                    return response()->json(['status' => true], 200);
+                }
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25));
+                $user->save();
+                return response()->json(['status' => true]);
+            }
+            if ($request->name == 'Dice Roll') {
+                Game::create([
+                    'creator_id' => $request->user()->id,
+                    'name' => $request->name,
+                    'dice_result' => $request->diceRolled,
+                    'stake' => $request->stake,
+                    'odds' => $request->odds,
+                    'dice_type' => $request->diceType
+                ]);
+                $user = $request->user();
+                if ($user->whipple_point >= 80) {
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake));
+                    $user->save();
 
 
+                    return response()->json(['status' => true]);
+                }
+                if ($user->whipple_point >= 40 && $user->whipple_point < 80) {
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25) - (intval($request->stake) * 0.25));
+                    $user->whipple_point = $user->whipple_point - 40;
+                    $user->save();
+                    return response()->json(['status' => true], 200);
+                }
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25));
+                $user->save();
+                return response()->json(['status' => true]);
+            }
+            if ($request->name == "Color Roulette") {
+                Game::create([
+                    'creator_id' => $request->user()->id,
+                    'name' => $request->name,
+                    'spin_wheel_result' => $request->colors,
+                    'odds' => $request->odds,
+                    'stake' => $request->stake
+                ]);
+                $user = $request->user();
+                if ($user->whipple_point >= 80) {
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake));
+                    $user->save();
+
+
+                    return response()->json(['status' => true]);
+                }
+                if ($user->whipple_point >= 40 && $user->whipple_point < 80) {
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25) - (intval($request->stake) * 0.25));
+                    $user->whipple_point = $user->whipple_point - 40;
+                    $user->save();
+                    return response()->json(['status' => true], 200);
+                }
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25));
+                $user->save();
+                return response()->json(['status' => true], 200);
+            }
+            if ($request->name == "Color Roulette2") {
+
+                Game::create([
+                    'creator_id' => $request->user()->id,
+                    'name' => $request->name,
+                    'spin_wheel_result' => $request->colorSpun,
+                    'stake' => $request->stake,
+                    'odds' => $request->odds
+                ]);
+                $user = $request->user();
+                if ($user->whipple_point >= 80) {
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake));
+                    $user->save();
+
+
+                    return response()->json(['status' => true]);
+                }
+                if ($user->whipple_point >= 40 && $user->whipple_point < 80) {
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25) - (intval($request->stake) * 0.25));
+                    $user->whipple_point = $user->whipple_point - 40;
+                    $user->save();
+                    return response()->json(['status' => true], 200);
+                }
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25));
+                $user->save();
+                return response()->json(['status' => true], 200);
+            }
+            if ($request->name == "One Number Spin") {
+                Game::create([
+                    'creator_id' => $request->user()->id,
+                    'name' => $request->name,
+                    'number_wheel_result' => $request->winningNumber,
+                    'stake' => $request->stake,
+                    'odds' => $request->odds
+                ]);
+                $user = $request->user();
+                if ($user->whipple_point >= 80) {
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake));
+                    $user->save();
+                    return response()->json(['status' => true]);
+                }
+                if ($user->whipple_point >= 40 && $user->whipple_point < 80) {
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25) - (intval($request->stake) * 0.25));
+                    $user->whipple_point = $user->whipple_point - 40;
+                    $user->save();
+                    return response()->json(['status' => true], 200);
+                }
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25));
+                $user->save();
+
+                return response()->json(['status' => true]);
+            }
+            if ($request->name == 'Wheel Spin') {
+
+                Game::create([
+                    'creator_id' => $request->user()->id,
+                    'name' => $request->name,
+                    'wheel_spin_results' => $request->numbers,
+                    'stake' => $request->stake,
+                    'odds' => $request->odds
+                ]);
+                $user = $request->user();
+                if ($user->whipple_point >= 80) {
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake));
+                    $user->save();
+
+
+                    return response()->json(['status' => true]);
+                }
+                if ($user->whipple_point >= 40 && $user->whipple_point < 80) {
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25) - (intval($request->stake) * 0.25));
+                    $user->whipple_point = $user->whipple_point - 40;
+                    $user->save();
+                    return response()->json(['status' => true], 200);
+                }
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25));
+                $user->save();
+                return response()->json(['status' => true], 200);
+            }
+            if ($request->name == 'Goal Challenge') {
+                Game::create([
+                    'creator_id' => $request->user()->id,
+                    'name' => $request->name,
+                    'ball_direction' => $request->direction,
+                    'stake' => $request->stake,
+                    'odds' => $request->odds
+                ]);
+                $user = $request->user();
+                if ($user->whipple_point >= 80) {
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake));
+                    $user->save();
+
+
+                    return response()->json(['status' => true]);
+                }
+                if ($user->whipple_point >= 40 && $user->whipple_point < 80) {
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25) - (intval($request->stake) * 0.25));
+                    $user->whipple_point = $user->whipple_point - 40;
+                    $user->save();
+                    return response()->json(['status' => true], 200);
+                }
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25));
+                $user->save();
+                return response()->json(['status' => true], 200);
+            }
+
+            if ($request->name == 'Mystery Box Game') {
+                Game::create([
+                    'creator_id' => $request->user()->id,
+                    'name' => $request->name,
+                    'winning_box' => $request->boxSelected,
+                    'stake' => $request->stake,
+                    'odds' => $request->odds
+                ]);
+                $user = $request->user();
+                if ($user->whipple_point >= 80) {
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake));
+                    $user->save();
+
+
+                    return response()->json(['status' => true]);
+                }
+                if ($user->whipple_point >= 40 && $user->whipple_point < 80) {
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25) - (intval($request->stake) * 0.25));
+                    $user->whipple_point = $user->whipple_point - 40;
+                    $user->save();
+                    return response()->json(['status' => true], 200);
+                }
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25));
+                $user->save();
+                return response()->json(['status' => true], 200);
+            }
+            if ($request->name == 'Spin The Bottle') {
+                Game::create([
+                    'creator_id' => $request->user()->id,
+                    'name' => $request->name,
+                    'spin_bottle' => $request->spinDirection,
+                    'stake' => $request->stake,
+                    'odds' => $request->odds
+                ]);
+                $user = $request->user();
+                if ($user->whipple_point >= 80) {
+                    $user->whipple_point = $user->whipple_point - 80;
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake));
+                    $user->save();
+
+
+                    return response()->json(['status' => true]);
+                }
+                if ($user->whipple_point >= 40 && $user->whipple_point < 80) {
+                    $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25) - (intval($request->stake) * 0.25));
+                    $user->whipple_point = $user->whipple_point - 40;
+                    $user->save();
+                    return response()->json(['status' => true], 200);
+                }
+                $user->wallet_balance = $user->wallet_balance - (intval($request->stake) + (intval($request->stake) * 0.25));
+                $user->save();
+                return response()->json(['status' => true], 200);
+            }
         } catch (\Throwable $th) {
-            return response()->json(['error'=>$th->getMessage()]);
+            return response()->json(['error' => $th->getMessage()]);
         }
     }
 
 
-public function getMyPlayedGames(Request $request)
-{
-    $user = $request->user();
-    
-    // Get all games user played (remove duplicates)
-    $games = $user->playedGames()
-        ->with(['winners', 'losers', 'creator'])
-        ->distinct()
-        ->get();
+    public function getMyPlayedGames(Request $request)
+    {
+        $user = $request->user();
 
-    // Format the response
-    $result = $games->map(function ($game) use ($user) {
-        $gameTime = GamePlayTime::where("game_id", $game->id)->where("user_id", $user->id)->first();
-       
-        return [
-            'id'      => $game->id,
-            'name'    => $game->name,
-            'status'  => $game->status,
-            'odds'    => $game->odds,
-            'creator' => $game->creator->name ?? null,
-            'played_at'=>$gameTime->created_at?? $game->created_at,
-            'stake'   => $game->stake,
-            'result'  => $game->winners->contains($user->id)
-                            ? 'won'
-                            : ($game->losers->contains($user->id) ? 'lost' : null),
-        ];
-    });
+        // Get all games user played (remove duplicates)
+        $games = $user->playedGames()
+            ->with(['winners', 'losers', 'creator'])
+            ->distinct()
+            ->get();
 
-    return response()->json($result);
-}
+        // Format the response
+        $result = $games->map(function ($game) use ($user) {
+            $gameTime = GamePlayTime::where("game_id", $game->id)->where("user_id", $user->id)->first();
 
-public function leaderboard()
-{
-    $winners = DB::table('game_user')
-        ->join('games', 'game_user.game_id', '=', 'games.id')
-        ->join('users', 'game_user.user_id', '=', 'users.id')
-        ->select(
-            'users.id',
-            'users.name',
-            DB::raw('SUM(games.stake) as total_won'),
-            DB::raw('COUNT(games.id) as games_won')
-        )
-        ->where('game_user.is_winner', true)
-        ->groupBy('users.id', 'users.name')
-        ->orderByDesc('total_won')
-        ->limit(10) // top 10
-        ->get();
+            return [
+                'id'      => $game->id,
+                'name'    => $game->name,
+                'status'  => $game->status,
+                'odds'    => $game->odds,
+                'creator' => $game->creator->name ?? null,
+                'played_at' => $gameTime->created_at ?? $game->created_at,
+                'stake'   => $game->stake,
+                'result'  => $game->winners->contains($user->id)
+                    ? 'won'
+                    : ($game->losers->contains($user->id) ? 'lost' : null),
+            ];
+        });
 
-    return response()->json(['winners'=>$winners, 'status'=>true], 200);
-}
+        return response()->json($result);
+    }
+
+    public function leaderboard()
+    {
+        $winners = DB::table('game_user')
+            ->join('games', 'game_user.game_id', '=', 'games.id')
+            ->join('users', 'game_user.user_id', '=', 'users.id')
+            ->select(
+                'users.id',
+                'users.name',
+                DB::raw('SUM(games.stake) as total_won'),
+                DB::raw('COUNT(games.id) as games_won')
+            )
+            ->where('game_user.is_winner', true)
+            ->groupBy('users.id', 'users.name')
+            ->orderByDesc('total_won')
+            ->limit(10) // top 10
+            ->get();
+
+        return response()->json(['winners' => $winners, 'status' => true], 200);
+    }
 
 
-    public function getAllGames(Request $request){
-       
+    public function getAllGames(Request $request)
+    {
+
         $games = Game::where('status', 'open')->where("creator_id", '!=', $request->user()->id)->orderBy('stake', 'desc')->get();
 
-        return response()->json(['games'=>$games, 'status'=>true]);
+        return response()->json(['games' => $games, 'status' => true]);
     }
 
-    public function getGame($id){
+    public function getGame($id)
+    {
         $game = Game::with('creator')->find($id);
 
-        return response()->json(['status'=>true, 'game'=>$game], 200);
+        return response()->json(['status' => true, 'game' => $game], 200);
     }
 
-    public function getMyGames(Request $request){
+    public function getMyGames(Request $request)
+    {
         $games = Game::where('creator_id', $request->user()->id)->get();
-        return response()->json(['status'=>true, 'games'=>$games]);
+        return response()->json(['status' => true, 'games' => $games]);
     }
 
-public function winLosersGame(Request $request){
-     $game = Game::find($request->gameId);
+    public function winLosersGame(Request $request)
+    {
+        $game = Game::find($request->gameId);
 
-    $user = $request->user();
-    $house = User::where('id', $game->creator_id)->first();
-    $user->wallet_balance = $user->wallet_balance + ($game->stake/$game->odds);
-    $user->save();
-    $house->wallet_balance = $house->wallet_balance - ($game->stake/$game->odds);
-    $house->save();
+        $user = $request->user();
+        $house = User::where('id', $game->creator_id)->first();
+        $user->wallet_balance = $user->wallet_balance + ($game->stake / $game->odds);
+        $user->save();
+        $house->wallet_balance = $house->wallet_balance - ($game->stake / $game->odds);
+        $house->save();
 
-     $game->losers_game_won = true;
-     $game->save();
+        $game->losers_game_won = true;
+        $game->save();
 
-     return response()->json(['status'=>true], 200);
-}
-public function playLosersGame(Request $request){
-     $game = Game::find($request->gameId);
+        return response()->json(['status' => true], 200);
+    }
+    public function playLosersGame(Request $request)
+    {
+        $game = Game::find($request->gameId);
 
-     if($game->losers_game_won){
-        return response()->json(['error'=>"This game has already been won", 'status'=>false], 200);
-     }
-   $userLost =  $game->losers()->where('user_id', $request->user()->id)->exists();
+        if ($game->losers_game_won) {
+            return response()->json(['error' => "This game has already been won", 'status' => false], 200);
+        }
+        $userLost =  $game->losers()->where('user_id', $request->user()->id)->exists();
 
-   if($userLost){
-     $game->losers()->detach($request->user()->id);
+        if ($userLost) {
+            $game->losers()->detach($request->user()->id);
 
-     return response()->json(['status'=>true], 200);
+            return response()->json(['status' => true], 200);
+        } else {
+            return response()->json(['error' => 'You can not play this game', 'status' => false], 200);
+        }
+    }
 
-   }else{
-    return response()->json(['error'=>'You can not play this game', 'status'=>false], 200);
-   }
-
-}
-
- public function deductBalance($user, $amount)
+    public function deductBalance($user, $amount)
 
 
 
     {
 
-  
 
-         if($user->whipple_point>=80){
+
+        if ($user->whipple_point >= 80) {
             $user->whipple_point = $user->whipple_point - 80;
             $user->save();
-                   return 'done';
-                }
-                if($user->whipple_point >=40 &&$user->whipple_point<80){
-                    $user->wallet_balance = $user->wallet_balance - (intval($amount) -(intval($amount)*0.25));
-            $user->whipple_point = $user->whipple_point - 40;   
-             $user->save(); 
-             if ($user->wallet_balance < $amount) {
-            return 'insufficient';
+            return 'done';
         }
-                return 'done';
-                }
+        if ($user->whipple_point >= 40 && $user->whipple_point < 80) {
+            $user->wallet_balance = $user->wallet_balance - (intval($amount) - (intval($amount) * 0.25));
+            $user->whipple_point = $user->whipple_point - 40;
+            $user->save();
+            if ($user->wallet_balance < $amount) {
+                return 'insufficient';
+            }
+            return 'done';
+        }
 
 
 
@@ -410,534 +449,537 @@ public function playLosersGame(Request $request){
 
         return 'done';
     }
-    public function playGame(Request $request){
-        $request->validate(['gameId'=>'required']);
+    public function playGame(Request $request)
+    {
+        $request->validate(['gameId' => 'required']);
 
         $game = Game::find($request->gameId);
-$isAttached = $game->players()->where('user_id', $request->user()->id)->exists();
+        $isAttached = $game->players()->where('user_id', $request->user()->id)->exists();
 
-if ($isAttached) {
-return response()->json(['error'=>'You have already played this game']);
-}
+        if ($isAttached) {
+            return response()->json(['error' => 'You have already played this game']);
+        }
 
-if ($game->winners()->where('user_id', $request->user()->id)->exists() ||
-    $game->losers()->where('user_id', $request->user()->id)->exists()) {
-    return response()->json(['error' => 'You have already played this game']);
-}
-$user = $request->user();
-$amount = $game->stake/$game->odds;
-$deductBalance = $this->deductBalance($user, $amount);
+        if (
+            $game->winners()->where('user_id', $request->user()->id)->exists() ||
+            $game->losers()->where('user_id', $request->user()->id)->exists()
+        ) {
+            return response()->json(['error' => 'You have already played this game']);
+        }
+        $user = $request->user();
+        $amount = $game->stake / $game->odds;
+        $deductBalance = $this->deductBalance($user, $amount);
 
-if($deductBalance && $deductBalance=='insufficient'){
-    return response()->json(['error'=>'Insufficient Funds']);
-}
+        if ($deductBalance && $deductBalance == 'insufficient') {
+            return response()->json(['error' => 'Insufficient Funds']);
+        }
 
-    $game->players()->attach($request->user()->id);
-GamePlayTime::create([
-    'user_id'=>$request->user()->id,
-    'game_id'=>$game->id
-]);
-    if( $game->name == 'Lucky Number'){
-        $numbers = explode(',', $game->number_result); // ["1","2","3","4","5"]
+        $game->players()->attach($request->user()->id);
+        GamePlayTime::create([
+            'user_id' => $request->user()->id,
+            'game_id' => $game->id
+        ]);
+        if ($game->name == 'Lucky Number') {
+            $numbers = explode(',', $game->number_result); // ["1","2","3","4","5"]
 
 
-        if (in_array($request->choiceNumber, $numbers)) {
-            // Reload fresh count to avoid stale data
-            $winnersCount = $game->winners()->count();
+            if (in_array($request->choiceNumber, $numbers)) {
+                // Reload fresh count to avoid stale data
+                $winnersCount = $game->winners()->count();
 
-          
-            if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // Attach winner
-            $game->winners()->attach($request->user()->id);
-        
-            // Check count again in case two requests came in at the same time
-            $newCount = $game->winners()->count();
-        
-            if ($newCount > $game->number_of_winners) {
-                // Remove the extra winner (this user)
-                $game->winners()->detach($request->user()->id);
-        
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // If exactly $game->number_of_winners now → close the game
-            if ($newCount == $game->number_of_winners) {
+
+                if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // Attach winner
+                $game->winners()->attach($request->user()->id);
+
+                // Check count again in case two requests came in at the same time
+                $newCount = $game->winners()->count();
+
+                if ($newCount > $game->number_of_winners) {
+                    // Remove the extra winner (this user)
+                    $game->winners()->detach($request->user()->id);
+
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // If exactly $game->number_of_winners now → close the game
+                if ($newCount == $game->number_of_winners) {
+                    $game->update(['status' => 'closed']);
+                }
+                $user = $request->user();
+
+                $deduction = $game->stake / $game->odds;
+                $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+
+                $user->save();
+
                 $game->update(['status' => 'closed']);
+
+
+                return response()->json(['status' => true, 'success' => true]);
+            } else {
+                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                $house = User::where('id', $game->creator_id)->first();
+                $house->wallet_balance = $house->wallet_balance + ($game->stake / $game->odds);
+                $house->save();
+                return response()->json(['status' => true, 'success' => false]);
             }
-            $user = $request->user();
+        }
+
+        if ($game->name == 'Wheel Spin') {
+            $numbers = explode(',', $game->wheel_spin_results); // ["1","2","3","4","5"]   
+            if (in_array($request->number, $numbers)) {
+                // Reload fresh count to avoid stale data
+                $winnersCount = $game->winners()->count();
+
+
+                if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // Attach winner
+                $game->winners()->attach($request->user()->id);
+
+                // Check count again in case two requests came in at the same time
+                $newCount = $game->winners()->count();
+
+                if ($newCount > $game->number_of_winners) {
+                    // Remove the extra winner (this user)
+                    $game->winners()->detach($request->user()->id);
+
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // If exactly $game->number_of_winners now → close the game
+                if ($newCount == $game->number_of_winners) {
+                    $game->update(['status' => 'closed']);
+                }
+                $user = $request->user();
+                $deduction = $game->stake / $game->odds;
+                $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+                $user->save();
+                $game->update(['status' => 'closed']);;
+
+                return response()->json(['status' => true, 'success' => true]);
+            } else {
+                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                $house = User::where('id', $game->creator_id)->first();
+                $house->wallet_balance = $house->wallet_balance + ($game->stake / $game->odds);
+                $house->save();
+                return response()->json(['status' => true, 'success' => false]);
+            }
+        }
+
+        if ($game->name == "Flip The Coin") {
+
+            if ($game->coin_toss == $request->choice) {
+                $winnersCount = $game->winners()->count();
+
+                if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // Attach winner
+                $game->winners()->attach($request->user()->id);
+
+                // Check count again in case two requests came in at the same time
+                $newCount = $game->winners()->count();
+
+                if ($newCount > $game->number_of_winners) {
+                    // Remove the extra winner (this user)
+                    $game->winners()->detach($request->user()->id);
+
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // If exactly $game->number_of_winners now → close the game
+                if ($newCount == $game->number_of_winners) {
+                    $game->update(['status' => 'closed']);
+                }
+                $user = $request->user();
+                $deduction = $game->stake / $game->odds;
+                $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+                $user->save();
+                $game->update(['status' => 'closed']);;
+                return response()->json(['status' => true, 'success' => true]);
+            } else {
+                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                $house = User::where('id', $game->creator_id)->first();
+                $house->wallet_balance = $house->wallet_balance + ($game->stake / $game->odds);
+                $house->save();
+                return response()->json(['status' => true, 'success' => false]);
+            }
+        }
+        if ($game->name == "Goal Challenge") {
+
+            if ($game->ball_direction == $request->direction) {
+                $winnersCount = $game->winners()->count();
+
+                if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // Attach winner
+                $game->winners()->attach($request->user()->id);
+
+                // Check count again in case two requests came in at the same time
+                $newCount = $game->winners()->count();
+
+                if ($newCount > $game->number_of_winners) {
+                    // Remove the extra winner (this user)
+                    $game->winners()->detach($request->user()->id);
+
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // If exactly $game->number_of_winners now → close the game
+                if ($newCount == $game->number_of_winners) {
+                    $game->update(['status' => 'closed']);
+                }
+
+
+                $user = $request->user();
+                $deduction = $game->stake / $game->odds;
+                $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+                $user->save();
+                $game->update(['status' => 'closed']);;
+
+                return response()->json(['status' => true, 'success' => true]);
+            } else {
+                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                $house = User::where('id', $game->creator_id)->first();
+                $house->wallet_balance = $house->wallet_balance + ($game->stake / $game->odds);
+                $house->save();
+                return response()->json(['status' => true, 'success' => false]);
+            }
+        }
+        if ($game->name == "Dice Roll") {
+
+            if ($game->dice_result == $request->numberRolled) {
+                $winnersCount = $game->winners()->count();
+
+                if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // Attach winner
+                $game->winners()->attach($request->user()->id);
+
+                // Check count again in case two requests came in at the same time
+                $newCount = $game->winners()->count();
+
+                if ($newCount > $game->number_of_winners) {
+                    // Remove the extra winner (this user)
+                    $game->winners()->detach($request->user()->id);
+
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // If exactly $game->number_of_winners now → close the game
+                if ($newCount == $game->number_of_winners) {
+                    $game->update(['status' => 'closed']);
+                }
+                $user = $request->user();
+                $deduction = $game->stake / $game->odds;
+                $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+                $user->save();
+                $game->update(['status' => 'closed']);;
+                return response()->json(['status' => true, 'success' => true]);
+            } else {
+                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                $house = User::where('id', $game->creator_id)->first();
+                $house->wallet_balance = $house->wallet_balance + ($game->stake / $game->odds);
+                $house->save();
+                return response()->json(['status' => true, 'success' => false]);
+            }
+        }
+
+        if ($game->name == "One Number Spin") {
+
+            if ($game->number_wheel_result == $request->numberWheeled) {
+                $winnersCount = $game->winners()->count();
+
+                if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // Attach winner
+                $game->winners()->attach($request->user()->id);
+
+                // Check count again in case two requests came in at the same time
+                $newCount = $game->winners()->count();
+
+                if ($newCount > $game->number_of_winners) {
+                    // Remove the extra winner (this user)
+                    $game->winners()->detach($request->user()->id);
+
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // If exactly $game->number_of_winners now → close the game
+                if ($newCount == $game->number_of_winners) {
+                    $game->update(['status' => 'closed']);
+                }
+
+                $user = $request->user();
+                $deduction = $game->stake / $game->odds;
+                $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+                $user->save();
+                $game->update(['status' => 'closed']);;
+
+                return response()->json(['status' => true, 'success' => true]);
+            } else {
+                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                $house = User::where('id', $game->creator_id)->first();
+                $house->wallet_balance = $house->wallet_balance + ($game->stake / $game->odds);
+                $house->save();
+                return response()->json(['status' => true, 'success' => false]);
+            }
+        }
+
+        if ($game->name == "Mystery Box Game") {
+
+            if ($game->winning_box == $request->boxSelected) {
+                $winnersCount = $game->winners()->count();
+
+                if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // Attach winner
+                $game->winners()->attach($request->user()->id);
+
+                // Check count again in case two requests came in at the same time
+                $newCount = $game->winners()->count();
+
+                if ($newCount > $game->number_of_winners) {
+                    // Remove the extra winner (this user)
+                    $game->winners()->detach($request->user()->id);
+
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // If exactly $game->number_of_winners now → close the game
+                if ($newCount == $game->number_of_winners) {
+                    $game->update(['status' => 'closed']);
+                }
+                $user = $request->user();
+                $deduction = $game->stake / $game->odds;
+                $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+                $user->save();
+                $game->update(['status' => 'closed']);;
+                return response()->json(['status' => true, 'success' => true]);
+            } else {
+                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                $house = User::where('id', $game->creator_id)->first();
+                $house->wallet_balance = $house->wallet_balance + ($game->stake / $game->odds);
+                $house->save();
+                return response()->json(['status' => true, 'success' => false]);
+            }
+        }
+        if ($game->name == "Color Roulette2") {
            
-            $deduction = $game->stake/$game->odds;
-            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+            if ($game->spin_wheel_result == $request->colorSpun) {
+                $winnersCount = $game->winners()->count();
 
-            $user->save();
-            
-            $game->update(['status'=>'closed']);
+                if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
 
-        
-            return response()->json(['status' => true, 'success' => true]);
-        }else{
-               $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
-               $house = User::where('id', $game->creator_id)->first();
-               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
-               $house->save();
-        return response()->json(['status'=>true, 'success'=>false]);
-    }
-    }
+                // Attach winner
+                $game->winners()->attach($request->user()->id);
 
-    if($game->name == 'Wheel Spin'){
-        $numbers = explode(',', $game->wheel_spin_results); // ["1","2","3","4","5"]   
-        if (in_array($request->number, $numbers)) {
-            // Reload fresh count to avoid stale data
-            $winnersCount = $game->winners()->count();
+                // Check count again in case two requests came in at the same time
+                $newCount = $game->winners()->count();
 
+                if ($newCount > $game->number_of_winners) {
+                    // Remove the extra winner (this user)
+                    $game->winners()->detach($request->user()->id);
+
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // If exactly $game->number_of_winners now → close the game
+                if ($newCount == $game->number_of_winners) {
+                    $game->update(['status' => 'closed']);
+                }
+                $user = $request->user();
+                $deduction = $game->stake / $game->odds;
+                $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+                $user->save();
+                $game->update(['status' => 'closed']);;
+                return response()->json(['status' => true, 'success' => true]);
+            } else {
+                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                $house = User::where('id', $game->creator_id)->first();
+                $house->wallet_balance = $house->wallet_balance + ($game->stake / $game->odds);
+                $house->save();
+                return response()->json(['status' => true, 'success' => false]);
+            }
+        }
+
+        if ($game->name == "Color Roulette") {
+
+
+            $colors = array_map(
+                'strtolower',
+                array_map('trim', explode(',', $game->spin_wheel_result))
+            );
           
-            if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // Attach winner
-            $game->winners()->attach($request->user()->id);
-        
-            // Check count again in case two requests came in at the same time
-            $newCount = $game->winners()->count();
-        
-            if ($newCount > $game->number_of_winners) {
-                // Remove the extra winner (this user)
-                $game->winners()->detach($request->user()->id);
-        
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // If exactly $game->number_of_winners now → close the game
-            if ($newCount == $game->number_of_winners) {
+            if (in_array(strtolower($request->colorSpun), $colors)) {
+
+                $winnersCount = $game->winners()->count();
+
+                if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // Attach winner
+                $game->winners()->attach($request->user()->id);
+
+                // Check count again in case two requests came in at the same time
+                $newCount = $game->winners()->count();
+
+                if ($newCount > $game->number_of_winners) {
+                    // Remove the extra winner (this user)
+                    $game->winners()->detach($request->user()->id);
+
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // If exactly $game->number_of_winners now → close the game
+                if ($newCount == $game->number_of_winners) {
+                    $game->update(['status' => 'closed']);
+                }
+                $user = $request->user();
+                $deduction = $game->stake / $game->odds;
+                $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+                $user->save();
                 $game->update(['status' => 'closed']);
-            }           
-             $user = $request->user();
-            $deduction = $game->stake/$game->odds;
-            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
-            $user->save();
-            $game->update(['status'=>'closed']);
-;
-        
-            return response()->json(['status' => true, 'success' => true]); 
-    }else{
-               $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
-               $house = User::where('id', $game->creator_id)->first();
-               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
-               $house->save();
-        return response()->json(['status'=>true, 'success'=>false]);
-    }
-    }
 
-    if($game->name == "Flip The Coin"){
-     
-        if($game->coin_toss == $request->choice){
-            $winnersCount = $game->winners()->count();
-        
-             if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
+                return response()->json(['status' => true, 'success' => true]);
+            } else {
+                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+                
+                
+                return response()->json(['status' => true, 'success' => false]);
             }
-        
-            // Attach winner
-            $game->winners()->attach($request->user()->id);
-        
-            // Check count again in case two requests came in at the same time
-            $newCount = $game->winners()->count();
-        
-            if ($newCount > $game->number_of_winners) {
-                // Remove the extra winner (this user)
-                $game->winners()->detach($request->user()->id);
-        
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // If exactly $game->number_of_winners now → close the game
-            if ($newCount == $game->number_of_winners) {
-                $game->update(['status' => 'closed']);
-            }
-                    $user = $request->user();
-            $deduction = $game->stake/$game->odds;
-            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
-            $user->save();
-            $game->update(['status'=>'closed']);
-;
-            return response()->json(['status' => true, 'success' => true]);
-        }else{
-                    $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
-                    $house = User::where('id', $game->creator_id)->first();
-               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
-               $house->save();
-            return response()->json(['status'=>true, 'success'=>false]);
         }
-    }
-    if($game->name =="Goal Challenge"){
-       
-          if($game->ball_direction == $request->direction){
-            $winnersCount = $game->winners()->count();
-        
-             if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // Attach winner
-            $game->winners()->attach($request->user()->id);
-        
-            // Check count again in case two requests came in at the same time
-            $newCount = $game->winners()->count();
-        
-            if ($newCount > $game->number_of_winners) {
-                // Remove the extra winner (this user)
-                $game->winners()->detach($request->user()->id);
-        
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // If exactly $game->number_of_winners now → close the game
-            if ($newCount == $game->number_of_winners) {
-                $game->update(['status' => 'closed']);
-            }
 
+        if ($game->name == "Spin The Bottle") {
+            if ($game->spin_bottle == $request->direction) {
+                $winnersCount = $game->winners()->count();
 
-                        $user = $request->user();
-            $deduction = $game->stake/$game->odds;
-            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
-            $user->save();
-            $game->update(['status'=>'closed']);
-;
-        
-            return response()->json(['status' => true, 'success' => true]);
-        }else{
-                      $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
-                      $house = User::where('id', $game->creator_id)->first();
-               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
-               $house->save();
-            return response()->json(['status'=>true, 'success'=>false]);
-        }
-    }
-    if($game->name =="Dice Roll"){
-       
-          if($game->dice_result == $request->numberRolled){
-            $winnersCount = $game->winners()->count();
-        
-             if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
+                if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // Attach winner
+                $game->winners()->attach($request->user()->id);
+
+                // Check count again in case two requests came in at the same time
+                $newCount = $game->winners()->count();
+
+                if ($newCount > $game->number_of_winners) {
+                    // Remove the extra winner (this user)
+                    $game->winners()->detach($request->user()->id);
+
+                    return response()->json([
+                        'status' => false,
+                        'error' => 'Game is already closed.'
+                    ]);
+                }
+
+                // If exactly $game->number_of_winners now → close the game
+                if ($newCount == $game->number_of_winners) {
+                    $game->update(['status' => 'closed']);
+                }
+
+                $user = $request->user();
+                $deduction = $game->stake / $game->odds;
+                $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
+                $user->save();
+                $game->update(['status' => 'closed']);;
+
+                return response()->json(['status' => true, 'success' => true]);
+            } else {
+                $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
+
+                return response()->json(['status' => true, 'success' => false]);
             }
-        
-            // Attach winner
-            $game->winners()->attach($request->user()->id);
-        
-            // Check count again in case two requests came in at the same time
-            $newCount = $game->winners()->count();
-        
-            if ($newCount > $game->number_of_winners) {
-                // Remove the extra winner (this user)
-                $game->winners()->detach($request->user()->id);
-        
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // If exactly $game->number_of_winners now → close the game
-            if ($newCount == $game->number_of_winners) {
-                $game->update(['status' => 'closed']);
-            }
-                    $user = $request->user();
-            $deduction = $game->stake/$game->odds;
-            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
-            $user->save();
-            $game->update(['status'=>'closed']);
-;
-            return response()->json(['status' => true, 'success' => true]);
-        }else{
-                      $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
-                      $house = User::where('id', $game->creator_id)->first();
-               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
-               $house->save();
-            return response()->json(['status'=>true, 'success'=>false]);
         }
     }
 
-     if($game->name =="One Number Spin"){
-       
-          if($game->number_wheel_result == $request->numberWheeled){
-            $winnersCount = $game->winners()->count();
-        
-             if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // Attach winner
-            $game->winners()->attach($request->user()->id);
-        
-            // Check count again in case two requests came in at the same time
-            $newCount = $game->winners()->count();
-        
-            if ($newCount > $game->number_of_winners) {
-                // Remove the extra winner (this user)
-                $game->winners()->detach($request->user()->id);
-        
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // If exactly $game->number_of_winners now → close the game
-            if ($newCount == $game->number_of_winners) {
-                $game->update(['status' => 'closed']);
-            }
-
-                        $user = $request->user();
-            $deduction = $game->stake/$game->odds;
-            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
-            $user->save();
-            $game->update(['status'=>'closed']);
-;
-        
-            return response()->json(['status' => true, 'success' => true]);
-        }else{
-                       $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
-                       $house = User::where('id', $game->creator_id)->first();
-               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
-               $house->save();
-            return response()->json(['status'=>true, 'success'=>false]);
-        }
-    }
-
-    if($game->name =="Mystery Box Game"){
-       
-          if($game->winning_box == $request->boxSelected){
-            $winnersCount = $game->winners()->count();
-        
-             if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // Attach winner
-            $game->winners()->attach($request->user()->id);
-        
-            // Check count again in case two requests came in at the same time
-            $newCount = $game->winners()->count();
-        
-            if ($newCount > $game->number_of_winners) {
-                // Remove the extra winner (this user)
-                $game->winners()->detach($request->user()->id);
-        
-                return response()->json([
-                    'status' => false,
-                    'error' => 'Game is already closed.'
-                ]);
-            }
-        
-            // If exactly $game->number_of_winners now → close the game
-            if ($newCount == $game->number_of_winners) {
-                $game->update(['status' => 'closed']);
-            }
-                    $user = $request->user();
-            $deduction = $game->stake/$game->odds;
-            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
-            $user->save();
-            $game->update(['status'=>'closed']);
-;
-            return response()->json(['status' => true, 'success' => true]);
-        }else{
-                      $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
-                      $house = User::where('id', $game->creator_id)->first();
-               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
-               $house->save();
-            return response()->json(['status'=>true, 'success'=>false]);
-        }
-    }
-    if($game->name =="Color Roulette2"){
-                  if($game->spin_wheel_result == $request->colorSpun){
-                    $winnersCount = $game->winners()->count();
-        
-                     if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
-                        return response()->json([
-                            'status' => false,
-                            'error' => 'Game is already closed.'
-                        ]);
-                    }
-                
-                    // Attach winner
-                    $game->winners()->attach($request->user()->id);
-                
-                    // Check count again in case two requests came in at the same time
-                    $newCount = $game->winners()->count();
-                
-                    if ($newCount > $game->number_of_winners) {
-                        // Remove the extra winner (this user)
-                        $game->winners()->detach($request->user()->id);
-                
-                        return response()->json([
-                            'status' => false,
-                            'error' => 'Game is already closed.'
-                        ]);
-                    }
-                
-                    // If exactly $game->number_of_winners now → close the game
-                    if ($newCount == $game->number_of_winners) {
-                        $game->update(['status' => 'closed']);
-                    }
-                            $user = $request->user();
-            $deduction = $game->stake/$game->odds;
-            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
-            $user->save();
-            $game->update(['status'=>'closed']);
-;
-                    return response()->json(['status' => true, 'success' => true]);
-        }else{
-                      $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
-                      $house = User::where('id', $game->creator_id)->first();
-               $house->wallet_balance = $house->wallet_balance + ($game->stake/$game->odds);
-               $house->save();
-            return response()->json(['status'=>true, 'success'=>false]);
-        }
-    }
-
-    if($game->name =="Color Roulette"){
-                  if($game->spin_wheel_result == $request->colorSpun){
-                    $winnersCount = $game->winners()->count();
-        
-                     if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
-                        return response()->json([
-                            'status' => false,
-                            'error' => 'Game is already closed.'
-                        ]);
-                    }
-                
-                    // Attach winner
-                    $game->winners()->attach($request->user()->id);
-                
-                    // Check count again in case two requests came in at the same time
-                    $newCount = $game->winners()->count();
-                
-                    if ($newCount > $game->number_of_winners) {
-                        // Remove the extra winner (this user)
-                        $game->winners()->detach($request->user()->id);
-                
-                        return response()->json([
-                            'status' => false,
-                            'error' => 'Game is already closed.'
-                        ]);
-                    }
-                
-                    // If exactly $game->number_of_winners now → close the game
-                    if ($newCount == $game->number_of_winners) {
-                        $game->update(['status' => 'closed']);
-                    }
-                            $user = $request->user();
-            $deduction = $game->stake/$game->odds;
-            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
-            $user->save();
-            $game->update(['status'=>'closed']);
-;
-                    return response()->json(['status' => true, 'success' => true]);
-        }else{
-           $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
-            return response()->json(['status'=>true, 'success'=>false]);
-        }
-    }
-
-    if($game->name =="Spin The Bottle"){
-                  if($game->spin_bottle == $request->direction){
-                    $winnersCount = $game->winners()->count();
-        
-                     if ($game->number_of_winners && $winnersCount >= $game->number_of_winners) {
-                        return response()->json([
-                            'status' => false,
-                            'error' => 'Game is already closed.'
-                        ]);
-                    }
-                
-                    // Attach winner
-                    $game->winners()->attach($request->user()->id);
-                
-                    // Check count again in case two requests came in at the same time
-                    $newCount = $game->winners()->count();
-                
-                    if ($newCount > $game->number_of_winners) {
-                        // Remove the extra winner (this user)
-                        $game->winners()->detach($request->user()->id);
-                
-                        return response()->json([
-                            'status' => false,
-                            'error' => 'Game is already closed.'
-                        ]);
-                    }
-                
-                    // If exactly $game->number_of_winners now → close the game
-                    if ($newCount == $game->number_of_winners) {
-                        $game->update(['status' => 'closed']);
-                    }
-
-                                $user = $request->user();
-            $deduction = $game->stake/$game->odds;
-            $user->wallet_balance = $user->wallet_balance + $game->stake + $deduction;;
-            $user->save();
-            $game->update(['status'=>'closed']);
-;
-                
-                    return response()->json(['status' => true, 'success' => true]);
-        }else{
-           $game->losers()->syncWithoutDetaching([$request->user()->id => ['is_loser' => true]]);
-
-            return response()->json(['status'=>true, 'success'=>false]);
-        }
-    }
-
-
-
-
-    }
-
-    public function getLosersGame(Request $request){
+    public function getLosersGame(Request $request)
+    {
         $userId = $request->user()->id;
         $gamesUserLost = Game::whereHas('losers', function ($query) use ($userId) {
-    $query->where('user_id', $userId);
-})->get();
+            $query->where('user_id', $userId);
+        })->get();
 
 
 
 
-return response()->json(['games'=>$gamesUserLost], 200);
+        return response()->json(['games' => $gamesUserLost], 200);
     }
 }

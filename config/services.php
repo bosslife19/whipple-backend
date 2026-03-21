@@ -35,10 +35,10 @@ return [
         ],
     ],
 
-    'paystack' => [
-        'payment_url' => env('PAYSTACK_PAYMENT_URL', ''),
-        'secret_key' => env('PAYSTACK_SECRET_KEY', ''),
-        'public_key' => env('PAYSTACK_PUBLIC_KEY', ''),
+    'korapay' => [
+        'payment_url' => env('KORAPAY_PAYMENT_URL', ''),
+        'secret_key' => env('KORAPAY_SECRET_KEY', ''),
+        'public_key' => env('KORAPAY_PUBLIC_KEY', ''),
     ],
 
 ];

@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\UserController;
@@ -18,6 +19,10 @@ Route::get('/user', function (Request $request) {
 
 Route::post('/signup', [AuthController::class, 'signup']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendCode']);
+Route::post('/verify-reset-code', [ForgotPasswordController::class, 'verifyCode']);
+Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
+Route::post('/korapay/webhook', [TransactionController::class, 'handle']);
 
 
 
@@ -31,6 +36,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/get-losers-game', [GameController::class, 'getLosersGame']);
     Route::post('/win-losers-game', [GameController::class, "winLosersGame"]);
     Route::post('/losers-vote', [VoteController::class, 'losersVote']);
+    Route::post('/user-push-token', [UserController::class, 'setPushToken']);
+    Route::post('/send-push-notifications', [UserController::class, 'sendPushNotifications']);
 
     Route::post('/paystack/initialize', [PayGatewayController::class, 'paystackInitialize']);
     Route::get('/paystack/callback', [PayGatewayController::class, 'paystackCallback'])->name('paystack.callback');
@@ -40,6 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/withdraw/request', [TransactionController::class, 'withdrawRequest']);
     Route::post('/spend-game', [TransactionController::class, 'spendOnGame']);
     Route::get('/resend-otp', [AuthController::class, 'resendOtp']);
+
     Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
     Route::post('/update-profile', [UserController::class, 'updateProfile']);
 
@@ -60,6 +68,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/bank-save', [UserController::class, 'bankSave']);
     Route::get('/bank-list', [UserController::class, 'bankList']);
+    // routes/api.php
+
+
 
     Route::get('/quiz/start', [QuizController::class, 'start']);
     Route::post('/quiz/answer', [QuizController::class, 'answer']);

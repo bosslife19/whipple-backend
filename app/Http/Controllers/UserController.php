@@ -9,6 +9,7 @@ use App\Models\AdminConfiguration;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Services\PaymentGatewayService;
+use Illuminate\Support\Facades\Http;
 
 class UserController extends Controller
 {
@@ -65,6 +66,70 @@ class UserController extends Controller
         return response()->json(['status' => true], 200);
     }
 
+    public function setPushToken(Request $request){
+
+        
+        $request->validate(['token'=>'required']);
+
+
+        $user = $request->user();
+
+        $user->push_token = $request->token;
+      
+        $user->save();
+
+        return response()->json(['status'=>true]);
+
+    }
+    public function sendPushNotifications(Request $request){
+        {
+        $request->validate([
+            'title' => 'required|string',
+            'body' => 'required|string',
+        ]);
+
+        // Get users with push tokens
+        $users = \App\Models\User::whereNotNull('push_token')->get();
+
+        $tokens = $users
+            ->pluck('push_token')
+            ->filter(fn($token) => str_starts_with($token, 'ExponentPushToken'))
+            ->values()
+            ->all();
+
+
+
+
+
+        if (empty($tokens)) {
+            return response()->json(['message' => 'No valid push tokens found'], 400);
+        }
+
+        // Chunk into batches of 100
+        $chunks = array_chunk($tokens, 100);
+        $allResponses = [];
+
+        foreach ($chunks as $chunk) {
+            $messages = array_map(fn($token) => [
+                'to' => $token,
+                'title' => $request->title,
+                'body' => $request->body,
+            ], $chunk);
+
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Accept-Encoding' => 'gzip, deflate',
+            ])->post('https://exp.host/--/api/v2/push/send', $messages);
+
+            $allResponses[] = $response->json();
+        }
+
+        return response()->json([
+            'message' => 'Push notifications sent!',
+            'responses' => $allResponses,
+        ]);
+    }
+    }
 
     public function referralList()
     {
@@ -87,6 +152,7 @@ class UserController extends Controller
 
     public function bankSave(Request $request)
     {
+        \Log::info($request->all());
         $check = UserBankDetails::where('user_id', Auth::user()->id)->where('account_number', $request->account_number)->where('bank_code', $request->bank_code)->first();
 
         if ($check) {
@@ -97,35 +163,36 @@ class UserController extends Controller
             $request->account_number,
             $request->bank_code
         );
+       
 
         if ($resolver['status'] == false) {
             return $this->errRes(null, $resolver['message']);
         }
 
-        $recipient = (new PaymentGatewayService())->createRecipient(
-            $resolver['data']["account_name"],
-            $request->account_number,
-            $request->bank_code
-        );
+        // $recipient = (new PaymentGatewayService())->createRecipient(
+        //     $resolver['data']["account_name"],
+        //     $request->account_number,
+        //     $request->bank_code
+        // );
 
 
-        if ($recipient['status'] == false) {
-            return $this->errRes(null, $recipient['message']);
-        }
+        // if ($recipient['status'] == false) {
+        //     return $this->errRes(null, $recipient['message']);
+        // }
 
         $data = UserBankDetails::create([
             'user_id' => Auth::user()->id,
             'account_number' => $request->account_number,
             'account_name' => $resolver['data']["account_name"],
-            'bank_id' => $resolver['data']["bank_id"],
+            // 'bank_id' => $resolver['data']["bank_id"],
             'bank_name' => $request->bank_name,
             'bank_code' => $request->bank_code,
-            'recipient_code' => $recipient['data']['recipient_code'],
-            'recipient_id' => $recipient['data']['id'],
-            'recipient_integration' => $recipient['data']['integration'],
-            'recipient_type' => $recipient['data']['type'],
-            'recipient_detail' => json_encode($recipient['data']['details']),
-            'recipient_metal' => json_encode($recipient['data']['metadata']),
+            // 'recipient_code' => $recipient['data']['recipient_code'],
+            // 'recipient_id' => $recipient['data']['id'],
+            // 'recipient_integration' => $recipient['data']['integration'],
+            // 'recipient_type' => $recipient['data']['type'],
+            // 'recipient_detail' => json_encode($recipient['data']['details']),
+            // 'recipient_metal' => json_encode($recipient['data']['metadata']),
         ]);
 
         return $this->sucRes(
@@ -139,7 +206,7 @@ class UserController extends Controller
         $data = [];
         foreach ($banks as $bank) {
             $data[] = [
-                'bank_id' => encrypt($bank->id),
+
                 'account_number' => $bank->account_number,
                 'account_name' => $bank->account_name,
                 'bank_name' => $bank->bank_name,
