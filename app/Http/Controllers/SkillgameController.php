@@ -122,7 +122,7 @@ class SkillgameController extends Controller
                 ->whereDate('mp.created_at', today())
                 ->distinct('m.id')
                 ->count('m.id');
-            if ($matchgame->game->key != "tap_rush" || $todayFinishedCount >= 50) {
+            if ($matchgame->game->key != "tap_rush" || $todayFinishedCount >= 15) {
                 $matchgame->update(['status' => 'cancelled']);
                 return response()->json(['status' => 'error', 'message' => 'No users available for this game. Please try again later.'], 400);
             }
