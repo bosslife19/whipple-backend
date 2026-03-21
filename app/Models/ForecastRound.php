@@ -10,12 +10,12 @@ class ForecastRound extends Model
 
     public function forecastMatch()
     {
-        return $this->hasMany(ForecastMatch::class, 'forecast_round_id')->withDefault();
+        return $this->hasMany(ForecastMatch::class, 'forecast_round_id');
     }
 
     public function forecast()
     {
-        return $this->hasMany(Forecast::class, 'forecast_round_id')->withDefault();
+        return $this->hasMany(Forecast::class, 'forecast_round_id');
     }
 
     public function user()

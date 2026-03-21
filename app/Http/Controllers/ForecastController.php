@@ -62,16 +62,55 @@ class ForecastController extends Controller
 
             // Check if the user has already created a forecast round
             // of this type today (active or closed). If yes, charge.
-            $hasForecastTodayForType = ForecastRound::where('user_id', $userId)
-                ->where('type', $request->type)
-                ->whereDate('created_at', $today)
-                ->whereIn('status', ['active', 'closed'])
-                ->exists();
+            $amount = 0;
+            // $hasForecastTodayForType = ForecastRound::where('user_id', $userId)
+            //     ->where('type', $request->type)
+            //     ->whereDate('created_at', $today)
+            //     ->whereIn('status', ['active', 'closed'])
+            //     ->exists();
 
-            if ($hasForecastTodayForType) {
-                // Pricing per type: general => 500, specific => 1000
-                $amount = $request->type === 'specific' ? 1000 : 500;
+            // if ($hasForecastTodayForType) {
+            //     // Pricing per type: general => 500, specific => 1000
+            //     $amount = $request->type === 'specific' ? 1000 : 500;
+            // }
 
+            $matches = is_array($request->matches) && !isset($request->matches['id'])
+                ? $request->matches
+                : [$request->matches];
+
+            if($request->type == 'general'){
+                $countGenralGame = ForecastRound::where('user_id', $userId)
+                    ->where('type', 'general')
+                    ->whereDate('created_at', $today)
+                    ->whereIn('status', ['active', 'closed']);
+                if($countGenralGame->count() == 1){
+                    $gameCount = optional($countGenralGame->first())->forecast()->count() ?? 0;
+                    if($gameCount == 1){
+                        $amount = 500;
+                    }
+                }
+                if ($countGenralGame->count() == 0) {
+                    if (count($matches) > 1) {
+                        $amount = 500;
+                    }
+                }
+            }
+
+            if($request->type == 'specific'){
+                $countSpecificGame = ForecastRound::where('user_id', $userId)
+                    ->where('type', 'specific')
+                    ->whereDate('created_at', $today)
+                    ->whereIn('status', ['active', 'closed']);
+
+                if($countSpecificGame->count() >= 1){
+                    $amount = 1000 * count($matches);                
+                }
+                if ($countSpecificGame->count() == 0) {
+                    $amount = 1000 * (count($matches) - 1);
+                }
+            }
+
+            if($amount > 0){
                 if ($user->wallet_balance < $amount) {
                     return response()->json(['message' => 'Insufficient balance'], 422);
                 }
@@ -93,17 +132,13 @@ class ForecastController extends Controller
             }
         }
 
-        return DB::transaction(function () use ($request) {
+        return DB::transaction(function () use ($request, $matches) {
             $forecastRound = ForecastRound::create([
                 'label' => uniqid(),
                 'user_id' => Auth::user()->id,
                 'type' => $request->type,
                 'status' => $request->status ?? 'draft',
             ]);
-
-            $matches = is_array($request->matches) && !isset($request->matches['id']) 
-                ? $request->matches 
-                : [$request->matches];
 
             foreach ($matches as $match) {
                 Forecast::create([
