@@ -12,6 +12,15 @@ use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\SkillgameController;
 use App\Http\Controllers\PayGatewayController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\TournamentController;
+use App\Http\Controllers\AdminTournamentController;
+use App\Http\Controllers\AdminLeaderboardController;
+use App\Http\Controllers\AdminUserBalanceController;
+use App\Http\Controllers\AdminStatsController;
+
+Route::get('/leaderboards/most-frequent', [LeaderboardController::class, 'mostFrequent']);
+Route::get('/leaderboards/most-wins', [LeaderboardController::class, 'mostWins']);
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -27,6 +36,43 @@ Route::post('/korapay/webhook', [TransactionController::class, 'handle']);
 
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/leaderboards/me', [LeaderboardController::class, 'me']);
+
+    Route::prefix('tournaments')->group(function () {
+        Route::get('/mine', [TournamentController::class, 'mine']);
+        Route::get('/{uuid}', [TournamentController::class, 'show']);
+        Route::post('/{uuid}/screen-share', [TournamentController::class, 'enableScreenShare']);
+        Route::post('/{uuid}/rounds/{roundId}/score', [TournamentController::class, 'submitRoundScore']);
+        Route::get('/{uuid}/rounds/{roundId}/sync', [TournamentController::class, 'syncRound']);
+    });
+
+    Route::middleware(['admin', 'admin.permission:leaderboards'])->prefix('admin')->group(function () {
+        Route::post('/leaderboard/reset', [AdminLeaderboardController::class, 'reset']);
+    });
+
+    Route::middleware(['admin', 'admin.permission:analytics'])->prefix('admin')->group(function () {
+        Route::get('/stats/summary', [AdminStatsController::class, 'summary']);
+    });
+
+    Route::middleware(['admin', 'admin.permission:users'])->prefix('admin')->group(function () {
+        Route::post('/users/{id}/balance', [AdminUserBalanceController::class, 'adjust']);
+    });
+
+    Route::middleware(['admin', 'admin.permission:tournaments'])->prefix('admin')->group(function () {
+        Route::post('/tournaments', [AdminTournamentController::class, 'store']);
+        Route::post('/tournaments/{id}/import', [AdminTournamentController::class, 'import']);
+        Route::post('/tournaments/{id}/players', [AdminTournamentController::class, 'addPlayer']);
+        Route::delete('/tournaments/{id}/players/{userId}', [AdminTournamentController::class, 'removePlayer']);
+        Route::post('/tournaments/{id}/rounds', [AdminTournamentController::class, 'createRound']);
+        Route::post('/tournaments/rounds/{roundId}/countdown', [AdminTournamentController::class, 'startCountdown']);
+        Route::post('/tournaments/rounds/{roundId}/end', [AdminTournamentController::class, 'endRound']);
+        Route::post('/tournaments/{id}/eliminate', [AdminTournamentController::class, 'eliminate']);
+        Route::post('/tournaments/{id}/commentary', [AdminTournamentController::class, 'commentary']);
+        Route::post('/tournaments/{id}/screen-share', [AdminTournamentController::class, 'screenShare']);
+        Route::post('/tournaments/{id}/reset', [AdminTournamentController::class, 'reset']);
+        Route::get('/tournaments/{id}/state', [AdminTournamentController::class, 'state']);
+    });
+
     Route::post('/create-game', [GameController::class, 'createGame']);
     Route::get('/get-all-games', [GameController::class, 'getAllGames']);
     Route::post("/submit-vote", [VoteController::class, 'submitVote']);
