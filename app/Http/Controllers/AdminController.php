@@ -17,10 +17,24 @@ class AdminController extends Controller
     {
         $metrics = [
             'total_users' => User::count(),
-            'total_games' => Game::count(),
-            'total_transactions' => Transaction::count(),
-            'total_volume' => Transaction::where('status', 'success')->sum('amount'),
-            'recent_users' => User::latest()->take(5)->get(),
+            'total_games_today' => \App\Models\SkillGameMatchPlayers::whereDate('created_at', Carbon::today())->count(),
+            'total_games_week' => \App\Models\SkillGameMatchPlayers::whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()])->count(),
+            'total_games_month' => \App\Models\SkillGameMatchPlayers::whereMonth('created_at', Carbon::now()->month)->count(),
+            
+            'deposits' => [
+                'completed' => Transaction::where('type', 'deposit')->where('status', 'completed')->sum('amount'),
+                'pending' => Transaction::where('type', 'deposit')->where('status', 'pending')->sum('amount'),
+                'failed' => Transaction::where('type', 'deposit')->where('status', 'failed')->sum('amount'),
+            ],
+            'withdrawals' => [
+                'completed' => Transaction::where('type', 'withdrawal')->where('status', 'completed')->sum('amount'),
+                'pending' => Transaction::where('type', 'withdrawal')->where('status', 'pending')->sum('amount'),
+                'failed' => Transaction::where('type', 'withdrawal')->where('status', 'failed')->sum('amount'),
+            ],
+            
+            'total_volume' => Transaction::where('status', 'completed')->sum('amount'),
+            'total_points_earned' => Transaction::where('type', 'win')->sum('amount'),
+            'recent_users' => User::latest()->take(10)->get(),
         ];
 
         return view('admin.dashboard', compact('metrics'));

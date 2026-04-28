@@ -12,7 +12,7 @@ use App\Models\{Question, QuizSession, QuizAnswer, User};
 class QuizController extends Controller
 {
     // Start quiz: randomize questions & options
-    public function start(Request $request)
+    public function start($game_type)
     {
         $user = Auth::user();
         $adminConf = AdminConfiguration::first();
@@ -22,7 +22,7 @@ class QuizController extends Controller
             ->whereDate('created_at', Carbon::today())
             ->first();
 
-        if ($session) {
+        if ($session && $game_type === 'direct') {
             return $this->errRes(null, 'You’ve reached daily limit. Try again tomorrow!');
         }
 
@@ -30,6 +30,7 @@ class QuizController extends Controller
         $session = QuizSession::create([
             'user_id' => $user->id,
             'score' => 0,
+            'game_type' => $game_type,
         ]);
 
         // Pick 10 random questions

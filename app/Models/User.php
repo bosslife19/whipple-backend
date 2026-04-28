@@ -3,14 +3,12 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
@@ -73,29 +71,6 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'can_access_admin' => 'boolean',
-            'admin_permissions' => 'array',
         ];
-    }
-
-    public function canAccessPanel(Panel $panel): bool
-    {
-        return (bool) $this->can_access_admin;
-    }
-
-    public function hasAdminPermission(string $key): bool
-    {
-        if (! $this->can_access_admin) {
-            return false;
-        }
-        if ($this->admin_role === 'master') {
-            return true;
-        }
-        $permissions = $this->admin_permissions;
-        if (! is_array($permissions)) {
-            return false;
-        }
-
-        return in_array('*', $permissions, true) || in_array($key, $permissions, true);
     }
 }

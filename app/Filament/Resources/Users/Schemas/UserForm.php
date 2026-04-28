@@ -3,11 +3,8 @@
 namespace App\Filament\Resources\Users\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Schema;
 
 class UserForm
@@ -27,7 +24,7 @@ class UserForm
                 DateTimePicker::make('email_verified_at'),
                 TextInput::make('password')
                     ->password()
-                    ->dehydrated(fn (?string $state): bool => filled($state)),
+                    ->required(),
                 TextInput::make('otp')
                     ->numeric(),
                 Textarea::make('pin')
@@ -43,19 +40,6 @@ class UserForm
                     ->required()
                     ->numeric()
                     ->default(0),
-                Toggle::make('can_access_admin')
-                    ->label('Can access admin panel')
-                    ->visible(fn (): bool => auth()->user()?->admin_role === 'master'),
-                Select::make('admin_role')
-                    ->options([
-                        'master' => 'Master admin',
-                        'admin' => 'Admin (scoped permissions)',
-                    ])
-                    ->visible(fn (): bool => auth()->user()?->admin_role === 'master'),
-                TagsInput::make('admin_permissions')
-                    ->placeholder('users, tournaments, leaderboards')
-                    ->helperText('Permission keys: users, transactions, leaderboards, tournaments, analytics, settings')
-                    ->visible(fn (): bool => auth()->user()?->admin_role === 'master'),
             ]);
     }
 }

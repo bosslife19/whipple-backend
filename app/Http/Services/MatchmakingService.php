@@ -20,12 +20,11 @@ class MatchmakingService
     /**
      * Find or create a waiting match for a game
      */
-    public function findOrCreateWaitingMatch(SkillGame $game)
+    public function findOrCreateWaitingMatch(SkillGame $game, $game_type)
     {
         $match = SkillGameMatch::where('game_id', $game->id)
-            ->where('status', 'waiting')
-            ->orderBy('created_at', 'asc')
-            ->first();
+            ->where('status', 'waiting')->where('game_type', $game_type)
+            ->latest('created_at')->first();
 
         if (!$match) {
             $match = SkillGameMatch::create([
@@ -45,11 +44,11 @@ class MatchmakingService
     /**
      * Deduct stake from user's wallet and add to match.
      */
-    public function addPlayerToMatch(SkillGameMatch $match, User $user)
+    public function addPlayerToMatch(SkillGameMatch $match, User $user, $status="joined")
     {
-        $stake = $match->game->stake;
+        $stake = $match->game_type == 'tournament' ? 0 : $match->game->stake;
 
-        return DB::transaction(function () use ($stake, $match, $user) {
+        return DB::transaction(function () use ($stake, $match, $user, $status) {
 
             // add match player
             $existing = SkillGameMatchPlayers::where('match_id', $match->id)
@@ -67,6 +66,7 @@ class MatchmakingService
                 'stake_paid' => $stake,
                 'score' => 0,
                 'has_submitted' => false,
+                'status' => $status,
             ]);
 
             return $player;
@@ -256,6 +256,7 @@ class MatchmakingService
         $user = User::find(Auth::user()->id);
         $playerMatch = SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $matchId)->first();
 
+
         // Count ready and total players
         $readyPlayers = $match->players->where('status', 'ready')->count();
         $eliminatedPlayers = $match->players->where('status', 'eliminated')->count();
@@ -285,39 +286,43 @@ class MatchmakingService
         $secondsPassed = $startedAt->diffInSeconds(now());
         if($playerMatch->status == "ready"){             
             if($readyPlayers > 1 || $eliminatedPlayers >= 1){
-                if ($user->whipple_point >= 40) {
-                    $beforePoint = $user->whipple_point;
-                    $afterPoint = $beforePoint - 40;
+                if($match->game_type == "direct"){
+                    if ($user->whipple_point >= 40) {
+                        $beforePoint = $user->whipple_point;
+                        $afterPoint = $beforePoint - 40;
 
-                    Transaction::create([
-                        'user_id' => $user->id,
-                        'type' => 'game',
-                        'amount' => $matchgame->game->stake,
-                        'status' => 'completed',
-                        'ref' => uniqid(),
-                        'description' => 'Skill game - ' . $matchgame->game->name,
-                        'point_before' => $user->whipple_point,
-                        'point_after' => $afterPoint
-                    ]);
+                        Transaction::create([
+                            'user_id' => $user->id,
+                            'type' => 'game',
+                            'amount' => $matchgame->game->stake,
+                            'status' => 'completed',
+                            'ref' => uniqid(),
+                            'description' => 'Skill game - ' . $matchgame->game->name,
+                            'point_before' => $user->whipple_point,
+                            'point_after' => $afterPoint
+                        ]);
 
-                    $user->update(['whipple_point' => $afterPoint]);
-                    $playerMatch->update(['status' => "eliminated"]);
-                } else {
-                    $before = $user->wallet_balance;
-                    $after = $before - $matchgame->game->stake;
+                        $user->update(['whipple_point' => $afterPoint]);
+                        $playerMatch->update(['status' => "eliminated"]);
+                    } else {
+                        $before = $user->wallet_balance;
+                        $after = $before - $matchgame->game->stake;
 
-                    Transaction::create([
-                        'user_id' => $user->id,
-                        'type' => 'game',
-                        'amount' => $matchgame->game->stake,
-                        'status' => 'completed',
-                        'ref' => uniqid(),
-                        'description' => 'Skill game - ' . $matchgame->game->name,
-                        'balance_before' => $user->wallet_balance,
-                        'balance_after' => $after
-                    ]);
+                        Transaction::create([
+                            'user_id' => $user->id,
+                            'type' => 'game',
+                            'amount' => $matchgame->game->stake,
+                            'status' => 'completed',
+                            'ref' => uniqid(),
+                            'description' => 'Skill game - ' . $matchgame->game->name,
+                            'balance_before' => $user->wallet_balance,
+                            'balance_after' => $after
+                        ]);
 
-                    $user->update(['wallet_balance' => $after]);
+                        $user->update(['wallet_balance' => $after]);
+                        $playerMatch->update(['status' => "eliminated"]);
+                    }
+                }else{
                     $playerMatch->update(['status' => "eliminated"]);
                 }
             }
@@ -359,16 +364,27 @@ class MatchmakingService
         // }
 
         // Start game automatically once 2 ready players exist
+        
         if ($match->players->where('status', 'eliminated')->count() >= 2) {
-            $platform = $match->players->sum('stake_paid') * 0.2;
-            $pot = $match->players->sum('stake_paid') * 0.8;
+            if($match->game_type == "tournament"){
+                $match->update([
+                    'status' => "started",
+                    'platform_fee_percent' => 0,
+                    'pot_amount' => 0
+                ]);
+            }else{
+            
+                $platform = $match->players->sum('stake_paid') * 0.2;
+                $pot = $match->players->sum('stake_paid') * 0.8;
 
-            $match->update([
-                'status' => "started",
-                'platform_fee_percent' => $platform,
-                'pot_amount' => $pot
-            ]);
+                $match->update([
+                    'status' => "started",
+                    'platform_fee_percent' => $platform,
+                    'pot_amount' => $pot
+                ]);
+            }
         }
+        
 
         // Prepare output
         $matchB = [
@@ -383,6 +399,8 @@ class MatchmakingService
             "started_at" => $match->started_at,
             "finished_at" => $match->finished_at,
             "meta" => $match->meta,
+            "game_type" => $match->game_type,
+            "tournament_id" => $match->tournament_id,
         ];
 
         $players = [];
