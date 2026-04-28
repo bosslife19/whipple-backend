@@ -29,6 +29,7 @@ return new class extends Migration
             ['key' => 'math_clash', 'name' => 'Math Clash', 'stake' => 300, 'duration_seconds' => 30, 'rounds_question' => 20],
             ['key' => 'color_switch', 'name' => 'Color Switch Reflex', 'stake' => 500, 'duration_seconds' => 20, 'rounds_question' => 20],
             ['key' => 'defuse_x', 'name' => 'Defuse-X', 'stake' => 1000, 'duration_seconds' => 13, 'rounds_question' => 20],
+            ['key' => 'quiz', 'name' => 'Quiz', 'stake' => 100, 'duration_seconds' => 5, 'rounds_question' => 40],
         ]);
     }
 
