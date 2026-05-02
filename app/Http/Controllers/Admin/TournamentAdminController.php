@@ -21,7 +21,7 @@ class TournamentAdminController extends Controller
     public function index(Request $request)
     {
         $query = WhippleTournament::query();
-        
+
         if ($request->has('id') && $request->id) {
             $tournament = $query->find($request->id);
         } else {
@@ -31,7 +31,7 @@ class TournamentAdminController extends Controller
         $rankedPlayers = collect();
         if ($tournament) {
             $tournament->load(['players.user', 'lobbies.scores.user', 'streamSlots.user', 'commentary.author']);
-            
+
             $lobbies = $tournament->lobbies;
             $rankedPlayers = $tournament->players->map(function ($p) use ($lobbies) {
                 $totalScore = 0;
@@ -128,7 +128,7 @@ class TournamentAdminController extends Controller
             'limit' => 'required|integer|min:1|max:100',
         ]);
         $t = WhippleTournament::query()->findOrFail($data['tournament_id']);
-        
+
         if ($data['source'] === 'both') {
             $n1 = $this->tournaments->importFromLeaderboard($t, 'frequent', (int) $data['limit']);
             $n2 = $this->tournaments->importFromLeaderboard($t, 'wins', (int) $data['limit']);
@@ -148,7 +148,7 @@ class TournamentAdminController extends Controller
             'user_ids.*' => 'exists:users,id',
         ]);
         $t = WhippleTournament::query()->findOrFail($data['tournament_id']);
-        
+
         foreach ($data['user_ids'] as $uid) {
             $this->tournaments->addManualPlayerById($t, (int) $uid);
         }
@@ -195,10 +195,10 @@ class TournamentAdminController extends Controller
         $n = 0;
         foreach ($playerVirtual as $pv) {
             $user = User::query()->where('id', $pv->user_id)->first();
-            if($user->referral_code == "demo"){
-                $this->matchService->addPlayerToMatch($match, $user, "eliminated"); 
-                $n++;
-            }
+            // if($user->referral_code == "demo"){
+            $this->matchService->addPlayerToMatch($match, $user, "eliminated");
+            $n++;
+            // }
         }
 
         return back()->with('status', "Added {$n} players to lobby.");
@@ -208,7 +208,7 @@ class TournamentAdminController extends Controller
     {
         $data = $request->validate([
             'lobby_id' => 'required|exists:whipple_tournament_lobbies,id',
-        ]);        
+        ]);
         $lobby = \App\Models\WhippleTournamentLobby::query()->findOrFail($data['lobby_id']);
         $n = $this->tournaments->addPlayersToLobby($lobby);
         $this->tournaments->startCountdown($lobby);
@@ -218,7 +218,7 @@ class TournamentAdminController extends Controller
             'created_at' => now(),
             'started_at' => now(),
             'status' => "waiting"
-        ]); 
+        ]);
 
         return back()->with('status', '20s countdown started for lobby.');
     }

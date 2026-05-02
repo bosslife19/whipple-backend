@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Http\Services\MatchmakingService;
+use App\Models\SkillGame;
+use App\Models\SkillGameMatch;
 use App\Models\User;
 use App\Models\WhippleTournament;
 use App\Models\WhippleTournamentCommentary;
@@ -9,8 +12,6 @@ use App\Models\WhippleTournamentLobby;
 use App\Models\WhippleTournamentLobbyScore;
 use App\Models\WhippleTournamentPlayer;
 use App\Models\WhippleTournamentStreamSlot;
-use App\Models\SkillGame;
-use App\Models\SkillGameMatch;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,8 @@ use Illuminate\Support\Facades\DB;
 class TournamentService
 {
     public function __construct(
-        protected LeaderboardService $leaderboard
+        protected LeaderboardService $leaderboard,
+        protected MatchmakingService $matchService,
     ) {}
 
     public function activeTournament(): ?WhippleTournament
@@ -128,7 +130,7 @@ class TournamentService
         $game = SkillGame::where('key', $gameKey)->first();
         if ($game) {
             $activePlayerCount = $tournament->players()->where('eliminated', false)->count();
-            
+
             SkillGameMatch::create([
                 'game_id' => $game->id,
                 'status' => 'waiting',
@@ -155,6 +157,10 @@ class TournamentService
         }
         $n = 0;
         foreach ($q->get() as $tp) {
+            $user = User::query()->where('id', $tp->user_id)->first();
+            $match = SkillGameMatch::query()->where('tournament_id', $lobby->tournament_id)->where('lobby_id', $lobby->id)->first();
+            $this->matchService->addPlayerToMatch($match, $user, "joined");
+
             WhippleTournamentLobbyScore::query()->firstOrCreate(
                 ['lobby_id' => $lobby->id, 'user_id' => $tp->user_id],
                 ['score' => 0, 'rank' => null]

@@ -55,7 +55,7 @@ class SkillgameController extends Controller
         // if ($user->wallet_balance < $game->stake || $user->whipple_point < 40) {
         //     return response()->json(['status' => 'error', 'message' => 'Insufficient balance'], 422);
         // }
-        if($game_type == "direct"){
+        if ($game_type == "direct") {
             if ($user->whipple_point < 40) {
                 if ($user->wallet_balance < $game->stake) {
                     return response()->json(['message' => 'Insufficient balance'], 422);
@@ -69,13 +69,15 @@ class SkillgameController extends Controller
 
             // Check if match already full
             $currentCount = $match->players()->count();
-            if ($currentCount >= $match->max_players) {
+            if ($currentCount >= $match->max_players && $game_type == "direct") {
                 DB::rollBack();
                 return response()->json(['error' => 'Match full'], 400);
             }
 
             // Deduct stake & add player
+            // if ($game_type == "direct") {
             $player = $this->matchService->addPlayerToMatch($match, $user);
+            // }
 
             // If after join we reached max players, update match status to countdown or playing
             $newCount = $match->players()->count();
@@ -134,7 +136,7 @@ class SkillgameController extends Controller
         $match = $this->matchService->matchStatus($matchId);
         $playerMatch = SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $matchId)->first();
         if ($playerMatch->status == "joined") {
-            if($user->game_type == "direct"){
+            if ($user->game_type == "direct") {
                 if ($user->whipple_point < 40) {
                     if ($user->wallet_balance < $matchgame->game->stake) {
                         return response()->json(['message' => 'Insufficient balance'], 422);
@@ -379,9 +381,8 @@ class SkillgameController extends Controller
         $match->refresh();
 
         // Award logic — optional
-        
+
         $this->assignWinnings($match);
-        
     }
 
     /**
@@ -414,7 +415,7 @@ class SkillgameController extends Controller
         $players = SkillGameMatchPlayers::where('match_id', $match->id)
             ->orderByDesc('score')
             ->get();
-        if($match->game_type == "direct"){
+        if ($match->game_type == "direct") {
             $totalPot = $match->pot_amount; // Example stake * 4 players
             foreach ($players as $p) {
                 if ($match->game->key == "defuse_x") {
@@ -438,15 +439,15 @@ class SkillgameController extends Controller
                 $p->save();
                 $p->refresh();
             }
-        }else{
+        } else {
             foreach ($players as $p) {
-            $score = WhippleTournamentLobbyScore::where('user_id', $p->user_id)->where('lobby_id', $match->lobby_id)->first();
-            // $player = WhippleTournamentPlayer::where('user_id', $p->user_id)->where('tournament_id', $match->tournament_id)->first();
-            $score->score += $p->score;
-            $score->rank = $p->rank;
-            $score->save();
-            // $player->score += $p->score;
-            // $player->save();
+                $score = WhippleTournamentLobbyScore::where('user_id', $p->user_id)->where('lobby_id', $match->lobby_id)->first();
+                // $player = WhippleTournamentPlayer::where('user_id', $p->user_id)->where('tournament_id', $match->tournament_id)->first();
+                $score->score += $p->score;
+                $score->rank = $p->rank;
+                $score->save();
+                // $player->score += $p->score;
+                // $player->save();
             }
         }
     }
