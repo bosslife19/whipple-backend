@@ -14,6 +14,10 @@ class LeaderboardService
 
     public const TOURNAMENT_CUTOFF = 32;
 
+    public const REFERRAL_FREQUENT_POINTS = 5;
+
+    public const MIN_QUALIFYING_DEPOSIT_AMOUNT = 500;
+
     /** Skill game keys used for qualification counts */
     public const SKILL_KEYS = ['tap_rush', 'math_clash', 'color_switch', 'defuse_x'];
 
@@ -117,6 +121,8 @@ class LeaderboardService
         $forecast = $this->forecastStats($userId, $from, $to, $weekId);
         $depositPts = $this->depositPoints($userId, $from, $to, $weekId);
         $withdrawalPenalty = $this->withdrawalPenalty($userId, $from, $to, $weekId);
+        $referralCount = $this->referralCount($userId, $from, $to, $weekId);
+        $referralPoints = $referralCount * self::REFERRAL_FREQUENT_POINTS;
 
         $freqSkill = 0.0;
         $winSkill = 0.0;
@@ -135,7 +141,7 @@ class LeaderboardService
         $freqForecast = 1.0 * ($forecast['general'] + $forecast['specific']);
         $winForecast = 1.5 * ($forecast['general_correct'] + $forecast['specific_correct']);
 
-        $frequent = $freqSkill + $freqQuiz + $freqForecast + $depositPts + $withdrawalPenalty;
+        $frequent = $freqSkill + $freqQuiz + $freqForecast + $depositPts + $withdrawalPenalty + $referralPoints;
         $wins = $winSkill + $winQuiz + $winForecast + $withdrawalPenalty;
 
         $breakdown = [
@@ -149,6 +155,8 @@ class LeaderboardService
             'forecast_specific_correct' => $forecast['specific_correct'],
             'deposit_points' => $depositPts,
             'withdrawal_penalty' => $withdrawalPenalty,
+            'referral_count' => $referralCount,
+            'referral_points' => $referralPoints,
         ];
 
         return [
@@ -174,13 +182,13 @@ class LeaderboardService
 
         $gen = (int) ($breakdown['forecast_general'] ?? 0);
         $spec = (int) ($breakdown['forecast_specific'] ?? 0);
-        $forecastCount = $gen + $spec;
-        $forecastOk = $forecastCount >= 3;
+        $forecastGeneralOk = $gen >= 3;
+        $forecastSpecificOk = $spec >= 3;
 
         $deposits = $this->completedDepositCount($userId, $from, $to, $breakdown['week_id'] ?? null);
         $depositOk = $deposits >= 3;
 
-        $qualified = $skillOk && $quizOk && $forecastOk && $depositOk;
+        $qualified = $skillOk && $quizOk && $forecastGeneralOk && $forecastSpecificOk && $depositOk;
 
         return [
             'qualified' => $qualified,
@@ -198,8 +206,14 @@ class LeaderboardService
                     'sessions' => $quizSessions,
                     'need' => 3,
                 ],
-                'fun_forecast_min_3' => ['met' => $forecastOk, 'count' => $forecastCount, 'need' => 3],
-                'deposits_min_3' => ['met' => $depositOk, 'count' => $deposits, 'need' => 3],
+                'forecast_general_min_3' => ['met' => $forecastGeneralOk, 'count' => $gen, 'need' => 3],
+                'forecast_specific_min_3' => ['met' => $forecastSpecificOk, 'count' => $spec, 'need' => 3],
+                'deposits_min_3' => [
+                    'met' => $depositOk,
+                    'count' => $deposits,
+                    'need' => 3,
+                    'min_amount' => self::MIN_QUALIFYING_DEPOSIT_AMOUNT,
+                ],
             ],
         ];
     }
@@ -267,11 +281,19 @@ class LeaderboardService
             $from, $to, $weekId
         )->distinct()->pluck('user_id');
 
+        $fromReferrals = $this->applyPauseFilters(
+            User::query()
+                ->whereNotNull('referred_by')
+                ->whereBetween('created_at', [$from, $to]),
+            $from, $to, $weekId
+        )->distinct()->pluck('referred_by');
+
         return array_values(array_unique(array_merge(
             $fromSkill->all(),
             $fromQuiz->all(),
             $fromFc->all(),
-            $fromTx->all()
+            $fromTx->all(),
+            $fromReferrals->all()
         )));
     }
 
@@ -410,6 +432,15 @@ class LeaderboardService
         return (float) (floor($sum / 500) * 2);
     }
 
+    private function referralCount(int $userId, Carbon $from, Carbon $to, ?int $weekId = null): int
+    {
+        $query = User::query()
+            ->where('referred_by', $userId)
+            ->whereBetween('created_at', [$from, $to]);
+
+        return (int) $this->applyPauseFilters($query, $from, $to, $weekId)->count();
+    }
+
     private function withdrawalPenalty(int $userId, Carbon $from, Carbon $to, ?int $weekId = null): float
     {
         $query = DB::table('transactions')
@@ -429,6 +460,7 @@ class LeaderboardService
             ->where('user_id', $userId)
             ->where('type', 'deposit')
             ->where('status', 'completed')
+            ->where('amount', '>=', self::MIN_QUALIFYING_DEPOSIT_AMOUNT)
             ->whereBetween('created_at', [$from, $to]);
 
         return (int) $this->applyPauseFilters($query, $from, $to, $weekId)->count();
