@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class SkillGameMatch extends Model
 {
     protected $guarded = [];
+    protected $casts = [
+        'started_at' => 'datetime',
+    ];
 
     public function players()
     {

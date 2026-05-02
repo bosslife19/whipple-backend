@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class QuizSession extends Model
 {
-    protected $fillable = ['user_id', 'score'];
+    protected $fillable = ['user_id', 'score', 'user_type', 'week_id'];
     public function answers()
     {
         return $this->hasMany(QuizAnswer::class);

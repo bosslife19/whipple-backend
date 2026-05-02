@@ -2,18 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
-use App\Models\User;
-use App\Models\SkillGame;
-use App\Models\GameRecord;
-use App\Models\Transaction;
-use Illuminate\Http\Request;
-use App\Models\SkillGameMatch;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use App\Models\SkillGameMatchPlayers;
 use App\Http\Services\MatchmakingService;
+use App\Models\GameRecord;
+use App\Models\SkillGame;
+use App\Models\SkillGameMatch;
+use App\Models\SkillGameMatchPlayers;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Models\WhippleTournamentLobbyScore;
+use App\Models\WhippleTournamentPlayer;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class SkillgameController extends Controller
 {
@@ -49,7 +51,7 @@ class SkillgameController extends Controller
      * POST /skillgame/matches/join
      * body: { game_key: string, user_id: int }
      */
-    public function join($key)
+    public function join($key, $game_type)
     {
 
         $game = SkillGame::where('key', $key)->first();
@@ -58,16 +60,17 @@ class SkillgameController extends Controller
         // if ($user->wallet_balance < $game->stake || $user->whipple_point < 40) {
         //     return response()->json(['status' => 'error', 'message' => 'Insufficient balance'], 422);
         // }
-
-        if ($user->whipple_point < 40) {
-            if ($user->wallet_balance < $game->stake) {
-                return response()->json(['message' => 'Insufficient balance'], 422);
+        if($game_type == "direct"){
+            if ($user->whipple_point < 40) {
+                if ($user->wallet_balance < $game->stake) {
+                    return response()->json(['message' => 'Insufficient balance'], 422);
+                }
             }
         }
 
         DB::beginTransaction();
         try {
-            $match = $this->matchService->findOrCreateWaitingMatch($game);
+            $match = $this->matchService->findOrCreateWaitingMatch($game, $game_type);
 
             // Check if match already full
             $currentCount = $match->players()->count();
@@ -136,12 +139,13 @@ class SkillgameController extends Controller
         $match = $this->matchService->matchStatus($matchId);
         $playerMatch = SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $matchId)->first();
         if ($playerMatch->status == "joined") {
-            if ($user->whipple_point < 40) {
-                if ($user->wallet_balance < $matchgame->game->stake) {
-                    return response()->json(['message' => 'Insufficient balance'], 422);
+            if($user->game_type == "direct"){
+                if ($user->whipple_point < 40) {
+                    if ($user->wallet_balance < $matchgame->game->stake) {
+                        return response()->json(['message' => 'Insufficient balance'], 422);
+                    }
                 }
             }
-
             $playerMatch->update(['status' => "ready"]);
         }
         return response()->json($match);
@@ -172,7 +176,7 @@ class SkillgameController extends Controller
         // $player = SkillGameMatchPlayers::where('match_id', $match->id)
         //     ->where('user_id', $user->id)
         //     ->first();
-        if ($request->ingame == "game") {
+        if ($request->ingame == "game" || $request->ingame == "ingame") {
             SkillGameMatchPlayers::where('user_id', Auth::user()->id)->where('match_id', $request->matchId)->update([
                 "score" => $request->score,
             ]);
@@ -206,6 +210,15 @@ class SkillgameController extends Controller
             if ($match->game->key == "tap_rush") {
                 if ($request->ingame == "ingame") {
                     $increase = rand(3, 8);
+                } else {
+                    $increase = 0;
+                }
+                $newScore = max(0, $currentScore + $increase);
+                $demo->update(["score" => $newScore, "time" => rand(15, 30)]);
+            }
+            if ($match->game->key == "quiz") {
+                if ($request->ingame == "ingame") {
+                    $increase = rand(0, 1) ? 10 : 0;
                 } else {
                     $increase = 0;
                 }
@@ -371,7 +384,9 @@ class SkillgameController extends Controller
         $match->refresh();
 
         // Award logic — optional
+        
         $this->assignWinnings($match);
+        
     }
 
     /**
@@ -404,28 +419,40 @@ class SkillgameController extends Controller
         $players = SkillGameMatchPlayers::where('match_id', $match->id)
             ->orderByDesc('score')
             ->get();
-        $totalPot = $match->pot_amount; // Example stake * 4 players
-        foreach ($players as $p) {
-            if ($match->game->key == "defuse_x") {
-                if ($p->rank == 1 && $p->score > 0) {
-                    $p->winnings = $totalPot;
-                    $this->matchService->gameWinnings($p, $match, $totalPot);
+        if($match->game_type == "direct"){
+            $totalPot = $match->pot_amount; // Example stake * 4 players
+            foreach ($players as $p) {
+                if ($match->game->key == "defuse_x") {
+                    if ($p->rank == 1 && $p->score > 0) {
+                        $p->winnings = $totalPot;
+                        $this->matchService->gameWinnings($p, $match, $totalPot);
+                    } else {
+                        $p->winnings = 0;
+                    }
                 } else {
-                    $p->winnings = 0;
+                    if ($p->rank == 1 && $p->score > 0) {
+                        $p->winnings = $totalPot * 0.75;
+                        $this->matchService->gameWinnings($p, $match, $totalPot * 0.75);
+                    } elseif ($p->rank == 2 && $p->score > 0) {
+                        $p->winnings = $totalPot * 0.25;
+                        $this->matchService->gameWinnings($p, $match, $totalPot * 0.25);
+                    } else {
+                        $p->winnings = 0;
+                    }
                 }
-            } else {
-                if ($p->rank == 1 && $p->score > 0) {
-                    $p->winnings = $totalPot * 0.75;
-                    $this->matchService->gameWinnings($p, $match, $totalPot * 0.75);
-                } elseif ($p->rank == 2 && $p->score > 0) {
-                    $p->winnings = $totalPot * 0.25;
-                    $this->matchService->gameWinnings($p, $match, $totalPot * 0.25);
-                } else {
-                    $p->winnings = 0;
-                }
+                $p->save();
+                $p->refresh();
             }
-            $p->save();
-            $p->refresh();
+        }else{
+            foreach ($players as $p) {
+            $score = WhippleTournamentLobbyScore::where('user_id', $p->user_id)->where('lobby_id', $match->lobby_id)->first();
+            // $player = WhippleTournamentPlayer::where('user_id', $p->user_id)->where('tournament_id', $match->tournament_id)->first();
+            $score->score += $p->score;
+            $score->rank = $p->rank;
+            $score->save();
+            // $player->score += $p->score;
+            // $player->save();
+            }
         }
     }
 

@@ -21,40 +21,96 @@
             <p class="text-2xl font-bold text-slate-900 mt-1">{{ number_format($metrics['total_users']) }}</p>
         </div>
 
-        <!-- Total Games -->
-        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm shadow-slate-200/50">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-2 bg-indigo-50 rounded-lg">
-                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 00-1 1v1a2 2 0 11-4 0v-1a1 1 0 00-1-1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"></path></svg>
-                </div>
-                <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">Live</span>
-            </div>
-            <h3 class="text-slate-500 text-sm font-medium">Total Games</h3>
-            <p class="text-2xl font-bold text-slate-900 mt-1">{{ number_format($metrics['total_games']) }}</p>
-        </div>
-
-        <!-- Total Transactions -->
-        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm shadow-slate-200/50">
-            <div class="flex items-center justify-between mb-4">
-                <div class="p-2 bg-emerald-50 rounded-lg">
-                    <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                </div>
-                <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">+12%</span>
-            </div>
-            <h3 class="text-slate-500 text-sm font-medium">Transactions</h3>
-            <p class="text-2xl font-bold text-slate-900 mt-1">{{ number_format($metrics['total_transactions']) }}</p>
-        </div>
-
         <!-- Total Volume -->
         <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm shadow-slate-200/50">
             <div class="flex items-center justify-between mb-4">
-                <div class="p-2 bg-amber-50 rounded-lg">
-                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div class="p-2 bg-emerald-50 rounded-lg">
+                    <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
-                <span class="text-xs font-semibold text-slate-600 bg-slate-50 px-2 py-1 rounded">Gross</span>
+                <span class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Gross</span>
             </div>
             <h3 class="text-slate-500 text-sm font-medium">Total Volume</h3>
             <p class="text-2xl font-bold text-slate-900 mt-1">₦{{ number_format($metrics['total_volume'], 2) }}</p>
+        </div>
+
+        <!-- Points Earned -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm shadow-slate-200/50">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-2 bg-amber-50 rounded-lg">
+                    <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <span class="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-1 rounded">Whipple</span>
+            </div>
+            <h3 class="text-slate-500 text-sm font-medium">Points Earned</h3>
+            <p class="text-2xl font-bold text-slate-900 mt-1">{{ number_format($metrics['total_points_earned']) }} pts</p>
+        </div>
+
+        <!-- Games Today -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm shadow-slate-200/50">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-2 bg-indigo-50 rounded-lg">
+                    <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"></path></svg>
+                </div>
+                <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">Today</span>
+            </div>
+            <h3 class="text-slate-500 text-sm font-medium">Games Played</h3>
+            <p class="text-2xl font-bold text-slate-900 mt-1">{{ number_format($metrics['total_games_today']) }}</p>
+        </div>
+    </div>
+
+    <!-- Secondary Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Game Stats -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <h3 class="font-bold text-slate-900 mb-4">Games Played (Periodic)</h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">This Week</span>
+                    <span class="font-bold text-slate-900">{{ number_format($metrics['total_games_week']) }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-600">This Month</span>
+                    <span class="font-bold text-slate-900">{{ number_format($metrics['total_games_month']) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deposits Status -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <h3 class="font-bold text-slate-900 mb-4">Deposits</h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-emerald-600">Completed</span>
+                    <span class="font-bold text-slate-900">₦{{ number_format($metrics['deposits']['completed'], 2) }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-amber-600">Pending</span>
+                    <span class="font-bold text-slate-900">₦{{ number_format($metrics['deposits']['pending'], 2) }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-red-600">Failed</span>
+                    <span class="font-bold text-slate-900">₦{{ number_format($metrics['deposits']['failed'], 2) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawals Status -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+            <h3 class="font-bold text-slate-900 mb-4">Withdrawals</h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-emerald-600">Completed</span>
+                    <span class="font-bold text-slate-900">₦{{ number_format($metrics['withdrawals']['completed'], 2) }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-amber-600">Pending</span>
+                    <span class="font-bold text-slate-900">₦{{ number_format($metrics['withdrawals']['pending'], 2) }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-red-600">Failed</span>
+                    <span class="font-bold text-slate-900">₦{{ number_format($metrics['withdrawals']['failed'], 2) }}</span>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -62,7 +118,7 @@
     <div class="bg-white rounded-2xl border border-slate-100 shadow-sm shadow-slate-200/50 overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
             <h3 class="font-bold text-slate-900">Recently Joined Users</h3>
-            <a href="#" class="text-sm font-semibold text-blue-600 hover:text-blue-700">View All</a>
+            <a href="{{ route('admin.users.index') }}" class="text-sm font-semibold text-blue-600 hover:text-blue-700">View All</a>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left">
@@ -92,9 +148,7 @@
                             </td>
                             <td class="px-6 py-4 text-sm text-slate-500">{{ $user->created_at->format('M d, Y') }}</td>
                             <td class="px-6 py-4 text-right">
-                                <button class="text-slate-400 hover:text-slate-600">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
-                                </button>
+                                <a href="{{ route('admin.users.show', $user->id) }}" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">Details</a>
                             </td>
                         </tr>
                     @empty

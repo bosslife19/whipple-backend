@@ -12,6 +12,8 @@ use App\Http\Controllers\ForecastController;
 use App\Http\Controllers\SkillgameController;
 use App\Http\Controllers\PayGatewayController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\WhippleLeaderboardController;
+use App\Http\Controllers\TournamentApiController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -62,6 +64,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/paystack/withdraw/initiate', [PayGatewayController::class, 'initiateTransfer']);
     Route::post('/deduct-balance', [UserController::class, 'deductBalance']);
     Route::get('/leaderboard', [GameController::class, 'leaderboard']);
+    Route::get('/whipple-leaderboard', [WhippleLeaderboardController::class, 'index']);
+
+    Route::prefix('tournament')->group(function () {
+        Route::get('/overview', [TournamentApiController::class, 'overview']);
+        Route::get('/lobby/{lobbyId}/state', [TournamentApiController::class, 'lobbyState']);
+        Route::post('/lobby/{lobbyId}/score', [TournamentApiController::class, 'submitLobbyScore']);
+        Route::post('/{id}/ack-screen-share', [TournamentApiController::class, 'ackScreenShare']);
+        Route::get('/{id}', [TournamentApiController::class, 'show']);
+    });
 
     Route::get('/referral-list', [UserController::class, 'referralList']);
     Route::get('/admin/parameter', [UserController::class, 'adminParameter']);
@@ -72,7 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 
-    Route::get('/quiz/start', [QuizController::class, 'start']);
+    Route::get('/quiz/start/{game_type}', [QuizController::class, 'start']);
     Route::post('/quiz/answer', [QuizController::class, 'answer']);
     Route::post('/quiz/boost', [QuizController::class, 'boost']);
     Route::post('/quiz/complete', [QuizController::class, 'complete']);
@@ -83,7 +94,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/games/{key}', [SkillgameController::class, 'show']);
 
         // Matchmaking / Matches
-        Route::get('/matches/join/{key}', [SkillgameController::class, 'join']); // expects { game_key, user_id }
+        Route::get('/matches/join/{key}/{game_type}', [SkillgameController::class, 'join']); // expects { game_key, user_id }
         Route::get('/matches/status/{id}', [SkillgameController::class, 'status']);
         Route::get('/matches/start/{id}', [SkillgameController::class, 'start']);
         Route::post('/matches/updateScore', [SkillgameController::class, 'updateScore']);
@@ -106,5 +117,4 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/myForecasts', [ForecastController::class, 'myForecasts']);
     });
-
 });

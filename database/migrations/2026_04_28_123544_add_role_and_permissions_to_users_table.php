@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('push_token')->nullable();
+            $table->string('role')->default('user'); // user, admin, master
+            $table->json('permissions')->nullable(); // For granular access
         });
     }
 
@@ -22,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropColumn(['role', 'permissions']);
         });
     }
 };
