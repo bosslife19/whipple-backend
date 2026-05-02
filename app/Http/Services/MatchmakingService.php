@@ -44,7 +44,7 @@ class MatchmakingService
     /**
      * Deduct stake from user's wallet and add to match.
      */
-    public function addPlayerToMatch(SkillGameMatch $match, User $user, $status="joined")
+    public function addPlayerToMatch(SkillGameMatch $match, User $user, $status = "joined")
     {
         $stake = $match->game_type == 'tournament' ? 0 : $match->game->stake;
 
@@ -262,129 +262,139 @@ class MatchmakingService
         $eliminatedPlayers = $match->players->where('status', 'eliminated')->count();
         $currentCount = $match->players->count();
 
-        /**
-         * Condition to add a demo user:
-         * 1. Current players = 1
-         * 2. Ready players = 1
-         * 3. 10 seconds has passed since match started_at
-         */
-        $shouldAddDemo = false;
+        if ($match->game_type == "direct") {
 
-        if ($currentCount == 1 && $readyPlayers == 1) {
-            $startedAt = Carbon::parse($match->started_at);
+            /**
+             * Condition to add a demo user:
+             * 1. Current players = 1
+             * 2. Ready players = 1
+             * 3. 10 seconds has passed since match started_at
+             */
+            $shouldAddDemo = false;
 
-            if ($startedAt->isPast()) {
-                $secondsPassed = $startedAt->diffInSeconds(now());
+            if ($currentCount == 1 && $readyPlayers == 1) {
+                $startedAt = Carbon::parse($match->started_at);
 
-                if ($secondsPassed >= 5) {
-                    $shouldAddDemo = true;
+                if ($startedAt->isPast()) {
+                    $secondsPassed = $startedAt->diffInSeconds(now());
+
+                    if ($secondsPassed >= 5) {
+                        $shouldAddDemo = true;
+                    }
                 }
             }
-        }
 
-        $startedAt = Carbon::parse($match->started_at);
-        $secondsPassed = $startedAt->diffInSeconds(now());
-        if($playerMatch->status == "ready"){             
-            if($readyPlayers > 1 || $eliminatedPlayers >= 1){
-                if($match->game_type == "direct"){
-                    if ($user->whipple_point >= 40) {
-                        $beforePoint = $user->whipple_point;
-                        $afterPoint = $beforePoint - 40;
+            $startedAt = Carbon::parse($match->started_at);
+            $secondsPassed = $startedAt->diffInSeconds(now());
+            if ($playerMatch->status == "ready") {
+                if ($readyPlayers > 1 || $eliminatedPlayers >= 1) {
+                    if ($match->game_type == "direct") {
+                        if ($user->whipple_point >= 40) {
+                            $beforePoint = $user->whipple_point;
+                            $afterPoint = $beforePoint - 40;
 
-                        Transaction::create([
-                            'user_id' => $user->id,
-                            'type' => 'game',
-                            'amount' => $matchgame->game->stake,
-                            'status' => 'completed',
-                            'ref' => uniqid(),
-                            'description' => 'Skill game - ' . $matchgame->game->name,
-                            'point_before' => $user->whipple_point,
-                            'point_after' => $afterPoint
-                        ]);
+                            Transaction::create([
+                                'user_id' => $user->id,
+                                'type' => 'game',
+                                'amount' => $matchgame->game->stake,
+                                'status' => 'completed',
+                                'ref' => uniqid(),
+                                'description' => 'Skill game - ' . $matchgame->game->name,
+                                'point_before' => $user->whipple_point,
+                                'point_after' => $afterPoint
+                            ]);
 
-                        $user->update(['whipple_point' => $afterPoint]);
-                        $playerMatch->update(['status' => "eliminated"]);
+                            $user->update(['whipple_point' => $afterPoint]);
+                            $playerMatch->update(['status' => "eliminated"]);
+                        } else {
+                            $before = $user->wallet_balance;
+                            $after = $before - $matchgame->game->stake;
+
+                            Transaction::create([
+                                'user_id' => $user->id,
+                                'type' => 'game',
+                                'amount' => $matchgame->game->stake,
+                                'status' => 'completed',
+                                'ref' => uniqid(),
+                                'description' => 'Skill game - ' . $matchgame->game->name,
+                                'balance_before' => $user->wallet_balance,
+                                'balance_after' => $after
+                            ]);
+
+                            $user->update(['wallet_balance' => $after]);
+                            $playerMatch->update(['status' => "eliminated"]);
+                        }
                     } else {
-                        $before = $user->wallet_balance;
-                        $after = $before - $matchgame->game->stake;
-
-                        Transaction::create([
-                            'user_id' => $user->id,
-                            'type' => 'game',
-                            'amount' => $matchgame->game->stake,
-                            'status' => 'completed',
-                            'ref' => uniqid(),
-                            'description' => 'Skill game - ' . $matchgame->game->name,
-                            'balance_before' => $user->wallet_balance,
-                            'balance_after' => $after
-                        ]);
-
-                        $user->update(['wallet_balance' => $after]);
                         $playerMatch->update(['status' => "eliminated"]);
                     }
-                }else{
-                    $playerMatch->update(['status' => "eliminated"]);
+                }
+                if ($startedAt->isPast()) {
+                    if ($secondsPassed >= 15 && $eliminatedPlayers == 0) {
+                        $match->update(['status' => 'cancelled']);
+                    }
                 }
             }
-            if ($startedAt->isPast()) {
-                if ($secondsPassed >= 15 && $eliminatedPlayers == 0) {
-                    $match->update(['status' => 'cancelled']);
+
+            // Add demo user only when conditions are met
+            if ($shouldAddDemo && $match->game->key === 'tap_rush') {
+                $demo = User::where('referral_code', 'demo')
+                    ->whereNotIn('id', $match->players->pluck('user_id'))
+                    ->inRandomOrder()
+                    ->first();
+
+                if ($demo) {
+                    SkillGameMatchPlayers::firstOrCreate(
+                        [
+                            'match_id' => $match->id,
+                            'user_id' => $demo->id,
+                        ],
+                        [
+                            'stake_paid' => $match->game->stake,
+                            'status' => 'eliminated',
+                            'has_submitted' => false,
+                            'is_demo' => true,
+                            'score' => 0,
+                        ]
+                    );
+
+                    $match->load('players.user');
                 }
             }
-        }
 
-        // Add demo user only when conditions are met
-        if ($shouldAddDemo && $match->game->key === 'tap_rush') {
-            $demo = User::where('referral_code', 'demo')
-                ->whereNotIn('id', $match->players->pluck('user_id'))
-                ->inRandomOrder()
-                ->first();
+            // if ($shouldAddDemo && $match->game->key !== 'tap_rush') {
+            //     $match->update(['status' => 'cancelled']);
+            // }
 
-            if ($demo) {
-                SkillGameMatchPlayers::firstOrCreate(
-                    [
-                        'match_id' => $match->id,
-                        'user_id' => $demo->id,
-                    ],
-                    [
-                        'stake_paid' => $match->game->stake,
-                        'status' => 'eliminated',
-                        'has_submitted' => false,
-                        'is_demo' => true,
-                        'score' => 0,
-                    ]
-                );
+            // Start game automatically once 2 ready players exist
 
-                $match->load('players.user');
+            if ($match->players->where('status', 'eliminated')->count() >= 2) {
+                if ($match->game_type == "tournament") {
+                    $match->update([
+                        'status' => "started",
+                        'platform_fee_percent' => 0,
+                        'pot_amount' => 0
+                    ]);
+                } else {
+
+                    $platform = $match->players->sum('stake_paid') * 0.2;
+                    $pot = $match->players->sum('stake_paid') * 0.8;
+
+                    $match->update([
+                        'status' => "started",
+                        'platform_fee_percent' => $platform,
+                        'pot_amount' => $pot
+                    ]);
+                }
+            }
+        } else {
+            $elapsed = Carbon::parse($match->created_at)->diffInSeconds(now());
+            $countdown = (int) max(0, 30 - $elapsed);
+            if ($countdown <= 0) {
+                $match->update(['status' => 'started']);
+                SkillGameMatchPlayers::where('match_id', $matchId)->update(['status' => 'eliminated']);
             }
         }
 
-        // if ($shouldAddDemo && $match->game->key !== 'tap_rush') {
-        //     $match->update(['status' => 'cancelled']);
-        // }
-
-        // Start game automatically once 2 ready players exist
-        
-        if ($match->players->where('status', 'eliminated')->count() >= 2) {
-            if($match->game_type == "tournament"){
-                $match->update([
-                    'status' => "started",
-                    'platform_fee_percent' => 0,
-                    'pot_amount' => 0
-                ]);
-            }else{
-            
-                $platform = $match->players->sum('stake_paid') * 0.2;
-                $pot = $match->players->sum('stake_paid') * 0.8;
-
-                $match->update([
-                    'status' => "started",
-                    'platform_fee_percent' => $platform,
-                    'pot_amount' => $pot
-                ]);
-            }
-        }
-        
 
         // Prepare output
         $matchB = [
