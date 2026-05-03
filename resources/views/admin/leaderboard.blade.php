@@ -103,7 +103,7 @@
                                     $thresholdScore = $board->where('rank', $topRankLimit)->first()[$key] ?? 0;
                                     $ptsNeeded = max(0, $thresholdScore - $row[$key]);
                                 @endphp
-                                <tr class="border-t hover:bg-slate-50 cursor-pointer {{ $isTop ? 'bg-amber-50' : '' }}" onclick="toggleDetails('details-{{ $row['user_id'] }}-{{ $key }}')">
+                                <tr class="border-t hover:bg-slate-50 cursor-pointer {{ $isTop ? 'bg-amber-50' : '' }}" data-details-id="details-{{ $row['user_id'] }}-{{ $key }}" onclick="toggleDetails(this.dataset.detailsId)">
                                     <td class="p-2 font-bold {{ $isTop ? 'text-amber-600' : '' }}">#{{ $row['rank'] }}</td>
                                     <td class="p-2">
                                         <div class="font-bold {{ $isTop ? 'text-amber-900' : '' }}">{{ $row['name'] }}</div>
@@ -155,7 +155,7 @@
                                                     <span class="{{ $sg['played'] >= 3 ? 'text-emerald-400' : 'text-slate-400' }} font-bold">{{ $sg['played'] }}/3</span>
                                                 </div>
                                                 <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                                                    <div class="h-full bg-emerald-500 rounded-full transition-all" style="width: {{ min(100, ($sg['played'] / 3) * 100) }}%"></div>
+                                                    <div class="h-full bg-emerald-500 rounded-full transition-all leaderboard-progress-bar" data-width="{{ min(100, ($sg['played'] / 3) * 100) }}"></div>
                                                 </div>
                                             </div>
                                             @endforeach
@@ -167,20 +167,31 @@
                                                     <span class="{{ $quiz['sessions'] >= 3 ? 'text-emerald-400' : 'text-slate-400' }} font-bold">{{ $quiz['sessions'] }}/3</span>
                                                 </div>
                                                 <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                                                    <div class="h-full bg-emerald-500 rounded-full transition-all" style="width: {{ min(100, ($quiz['sessions'] / 3) * 100) }}%"></div>
+                                                    <div class="h-full bg-emerald-500 rounded-full transition-all leaderboard-progress-bar" data-width="{{ min(100, ($quiz['sessions'] / 3) * 100) }}"></div>
                                                 </div>
                                             </div>
                                             @endif
 
-                                            @if($reqs['fun_forecast_min_3'] ?? null)
+                                            @if($forecastGen)
                                             <div>
                                                 <div class="flex justify-between text-xs mb-1">
-                                                    <span class="text-slate-400">Fun Forecast</span>
-                                                    @php $ff = $reqs['fun_forecast_min_3']; @endphp
-                                                    <span class="{{ $ff['met'] ? 'text-emerald-400' : 'text-slate-400' }} font-bold">{{ $ff['count'] }}/3</span>
+                                                    <span class="text-slate-400">General Forecast</span>
+                                                    <span class="{{ $forecastGen['met'] ? 'text-emerald-400' : 'text-slate-400' }} font-bold">{{ $forecastGen['count'] }}/3</span>
                                                 </div>
                                                 <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                                                    <div class="h-full bg-emerald-500 rounded-full transition-all" style="width: {{ min(100, ($ff['count'] / 3) * 100) }}%"></div>
+                                                    <div class="h-full bg-emerald-500 rounded-full transition-all leaderboard-progress-bar" data-width="{{ min(100, ($forecastGen['count'] / 3) * 100) }}"></div>
+                                                </div>
+                                            </div>
+                                            @endif
+
+                                            @if($forecastSpec)
+                                            <div>
+                                                <div class="flex justify-between text-xs mb-1">
+                                                    <span class="text-slate-400">Specific Forecast</span>
+                                                    <span class="{{ $forecastSpec['met'] ? 'text-emerald-400' : 'text-slate-400' }} font-bold">{{ $forecastSpec['count'] }}/3</span>
+                                                </div>
+                                                <div class="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                                    <div class="h-full bg-emerald-500 rounded-full transition-all leaderboard-progress-bar" data-width="{{ min(100, ($forecastSpec['count'] / 3) * 100) }}"></div>
                                                 </div>
                                             </div>
                                             @endif
@@ -192,17 +203,20 @@
                                             <ul class="text-slate-400 text-xs list-disc list-inside">
                                                 @foreach($skillGames as $sg)
                                                     @if($sg['played'] < 3)
-                                                        <li>Play {{ 3 - $sg['played'] }} more {{ ucwords(str_replace('_', ' ', $sg['key'])) }} game(s)</li>
+                                                        <li>Play at least {{ 3 - $sg['played'] }} more {{ ucwords(str_replace('_', ' ', $sg['key'])) }} game(s)</li>
                                                     @endif
                                                 @endforeach
                                                 @if($quiz && $quiz['sessions'] < 3)
-                                                    <li>Play {{ 3 - $quiz['sessions'] }} more Quiz Sessions</li>
+                                                    <li>Play at least {{ 3 - $quiz['sessions'] }} more Quiz Sessions</li>
                                                 @endif
-                                                @if($reqs['fun_forecast_min_3'] && !$reqs['fun_forecast_min_3']['met'])
-                                                    <li>Make {{ 3 - $reqs['fun_forecast_min_3']['count'] }} more Forecasts</li>
+                                                @if($forecastGen && !$forecastGen['met'])
+                                                    <li>Make at least {{ 3 - $forecastGen['count'] }} more General Forecast game(s)</li>
+                                                @endif
+                                                @if($forecastSpec && !$forecastSpec['met'])
+                                                    <li>Make at least {{ 3 - $forecastSpec['count'] }} more Specific Forecast game(s)</li>
                                                 @endif
                                                 @if(($reqs['deposits_min_3']['count'] ?? 0) < 3)
-                                                    <li>Make {{ 3 - ($reqs['deposits_min_3']['count'] ?? 0) }} more Deposits</li>
+                                                    <li>Make at least {{ 3 - ($reqs['deposits_min_3']['count'] ?? 0) }} more Deposits (minimum of {{ $reqs['deposits_min_3']['min_amount'] ?? 500 }} naira)</li>
                                                 @endif
                                             </ul>
                                         </div>
@@ -300,6 +314,13 @@
 @endif
 
 <script>
+function initLeaderboardProgressBars() {
+    document.querySelectorAll('.leaderboard-progress-bar').forEach((el) => {
+        const width = Number(el.dataset.width || 0);
+        el.style.width = `${Math.max(0, Math.min(100, width))}%`;
+    });
+}
+
 function toggleDetails(id) {
     const el = document.getElementById(id);
     if (el.classList.contains('hidden')) {
@@ -308,5 +329,7 @@ function toggleDetails(id) {
         el.classList.add('hidden');
     }
 }
+
+document.addEventListener('DOMContentLoaded', initLeaderboardProgressBars);
 </script>
 @endsection
