@@ -283,7 +283,7 @@
                             </form> --}}
                             <form action="{{ route('admin.tournament.lobby-countdown') }}" method="POST">@csrf
                                 <input type="hidden" name="lobby_id" value="{{ $lobby->id }}">
-                                <button class="text-xs bg-amber-100 px-2 py-1 rounded">Start 20s countdown</button>
+                                <button class="text-xs bg-amber-100 px-2 py-1 rounded">Start 30s countdown</button>
                             </form>
                             {{-- <form action="{{ route('admin.tournament.lobby-end') }}" method="POST">@csrf
                             <input type="hidden" name="lobby_id" value="{{ $lobby->id }}">

@@ -174,6 +174,7 @@ class TournamentService
     public function startCountdown(WhippleTournamentLobby $lobby): WhippleTournamentLobby
     {
         $lobby->update([
+            'countdown_seconds' => 30,
             'status' => 'countdown',
             'countdown_started_at' => Carbon::now(),
         ]);

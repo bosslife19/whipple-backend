@@ -113,16 +113,19 @@ class TournamentApiController extends Controller
     {
         $t->load(['players.user', 'lobbies.scores.user', 'streamSlots.user', 'commentary.author']);
 
-        $lobbies = $t->lobbies;
+        $lastLobby = $t->lobbies
+            ->sortByDesc(fn ($lobby) => $lobby->started_at?->getTimestamp() ?? $lobby->id)
+            ->first();
 
-        $players = $t->players->map(function ($p) use ($lobbies) {
-            $totalScore = 0;
-            foreach ($lobbies as $l) {
-                $scoreRow = $l->scores->firstWhere('user_id', $p->user_id);
+        $players = $t->players->map(function ($p) use ($lastLobby) {
+            $latestScore = 0;
+            if ($lastLobby) {
+                $scoreRow = $lastLobby->scores->firstWhere('user_id', $p->user_id);
                 if ($scoreRow) {
-                    $totalScore += (float) $scoreRow->score;
+                    $latestScore = (float) $scoreRow->score;
                 }
             }
+
             return [
                 'user_id' => $p->user_id,
                 'name' => $p->user->name ?? '',
@@ -130,7 +133,7 @@ class TournamentApiController extends Controller
                 'import_rank' => $p->import_rank,
                 'eliminated' => $p->eliminated,
                 'screen_share_ack' => $p->screen_share_ack,
-                'total_score' => $totalScore,
+                'total_score' => $latestScore,
             ];
         });
 

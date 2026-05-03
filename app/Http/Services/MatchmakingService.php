@@ -26,7 +26,7 @@ class MatchmakingService
             ->where('status', 'waiting')->where('game_type', $game_type)
             ->latest('created_at')->first();
 
-        if (!$match) {
+        if (!$match && $game_type == "direct") {
             $match = SkillGameMatch::create([
                 'game_id' => $game->id,
                 'status' => 'waiting',
@@ -36,6 +36,8 @@ class MatchmakingService
                 'started_at' => Carbon::now()->addSeconds(30),
                 'meta' => null,
             ]);
+        } else {
+            $match = SkillGameMatch::where('game_id', $game->id)->where('game_type', $game_type)->latest('created_at')->first();
         }
 
         return $match;

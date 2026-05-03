@@ -32,16 +32,20 @@ class TournamentAdminController extends Controller
         if ($tournament) {
             $tournament->load(['players.user', 'lobbies.scores.user', 'streamSlots.user', 'commentary.author']);
 
-            $lobbies = $tournament->lobbies;
-            $rankedPlayers = $tournament->players->map(function ($p) use ($lobbies) {
-                $totalScore = 0;
-                foreach ($lobbies as $l) {
-                    $scoreRow = $l->scores->firstWhere('user_id', $p->user_id);
+            $lastLobby = $tournament->lobbies
+                ->sortByDesc(fn ($lobby) => $lobby->started_at?->getTimestamp() ?? $lobby->id)
+                ->first();
+
+            $rankedPlayers = $tournament->players->map(function ($p) use ($lastLobby) {
+                $latestScore = 0;
+                if ($lastLobby) {
+                    $scoreRow = $lastLobby->scores->firstWhere('user_id', $p->user_id);
                     if ($scoreRow) {
-                        $totalScore += (float) $scoreRow->score;
+                        $latestScore = (float) $scoreRow->score;
                     }
                 }
-                $p->total_score = $totalScore;
+
+                $p->total_score = $latestScore;
                 return $p;
             })->sort(function ($a, $b) {
                 if ($a->eliminated !== $b->eliminated) {
